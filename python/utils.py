@@ -190,7 +190,7 @@ def loadWeights(path):
                 current = tag
                 continue
             if current is not None:
-                blocks[current].append([float(v) for v in row])
+                blocks[str(current)].append([float(v) for v in row])
     return (np.array(blocks['Wi']),
             np.array(blocks['Wj']),
             np.array(blocks['Wk']))

@@ -120,6 +120,15 @@ class Epoch:
 
         self.trainingset = split.trainingset
         self.traininglabels = split.traininglabels
+        self.confmat = np.zeros((outputsize, outputsize), dtype=int)
+        self.tps: list[int] = []
+        self.tns: list[int] = []
+        self.fps: list[int] = []
+        self.fns: list[int] = []
+        self.precisions: list[float] = []
+        self.recalls: list[float] = []
+        self.f1s: list[float] = []
+        self.totaltime = 0.0
  
     def run(self, x, d):
         x_biased = np.concatenate(([1.0], np.asarray(x, dtype=float)))
@@ -314,12 +323,12 @@ class Epoch:
                                 f"{cn}_Precision", f"{cn}_Recall", f"{cn}_F1"])
                 header.extend(['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'matthews', "Time"])
                 writer.writerow(header)
-            row = [self.iteration]
+            row_vals: list = [self.iteration]
             for c in range(n):
-                row.extend([self.tps[c], self.tns[c], self.fps[c], self.fns[c],
+                row_vals.extend([self.tps[c], self.tns[c], self.fps[c], self.fns[c],
                             self.precisions[c], self.recalls[c], self.f1s[c]])
-            row.extend([self.a, self.p, self.r, self.f1, self.matthews, self.totaltime])
-            writer.writerow(row)
+            row_vals.extend([self.a, self.p, self.r, self.f1, self.matthews, self.totaltime])
+            writer.writerow(row_vals)
 
     def exportConfusionMatrix(self, outputdir="export"):
         os.makedirs(outputdir, exist_ok=True)
