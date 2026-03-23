@@ -2,9 +2,6 @@
 
 A Multilayer Perceptron (MLP) Neural Network trained using the Backpropagation Algorithm on a challenging 8-class dataset. This project explores the full pipeline — from data preprocessing and class balancing, through architecture design and mathematical formulation, to iterative hyperparameter tuning and model evaluation.
 
-> **Course:** AI 201 — 2S AY 2025–2026
-> **Assignment:** Programming Assignment 3 — Neural Network
-
 ---
 
 ## Project Structure
