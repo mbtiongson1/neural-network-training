@@ -7,7 +7,7 @@ A Multilayer Perceptron (MLP) Neural Network trained using the Backpropagation A
 ## Project Structure
 
 ```
-PA3 - Neural Network/
+mbtiongson/neural-network-training/
 ├── LICENSE
 ├── README.md
 ├── .gitignore
