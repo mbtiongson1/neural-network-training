@@ -47,6 +47,19 @@ python main.py           # Train all networks and export predictions
 python checkscores.py    # Aggregate and rank scores from export/
 ```
 
+### Experimenting with Custom Configurations
+
+If you would like to run a single configuration without training the full suite of networks, a custom run feature is provided:
+
+1. Open `python/config.py` and edit the `NetworkC` dictionary (you can tweak hyperparameters, learning rates, or activation functions).
+2. Inside `python`, run the custom script:
+
+   ```bash
+   python maincustom.py
+   ```
+
+3. The model weight outputs will be exported to `modelCustom/trained_weights.csv`, the plots will be labeled as "Custom", and the predictions will be saved to `predictions/predictions_for_test_custom.csv`.
+
 ---
 
 ## Table of Contents
