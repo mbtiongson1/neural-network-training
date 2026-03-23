@@ -7,8 +7,51 @@ A Multilayer Perceptron (MLP) Neural Network trained using the Backpropagation A
 
 ---
 
+## Project Structure
+
+```
+PA3 - Neural Network/
+├── LICENSE
+├── README.md
+├── .gitignore
+├── src/                          # Additional source files
+├── python/                       # Modular Python refactor of main.ipynb
+│   ├── main.py                   # Main execution engine (run this)
+│   ├── activations.py            # Activation functions and derivatives
+│   ├── network.py                # OutputLayer, HiddenLayer, Epoch classes
+│   ├── utils.py                  # Utilities: Partition, train, predictions, charts
+│   ├── checkscores.py            # Score aggregation tool
+│   ├── dataset/                  # Copy of the dataset for standalone execution
+│   ├── figures/                  # Generated charts and learning curves
+│   ├── export/                   # Training artifacts (generated at runtime)
+│   ├── modelA/                   # Best model weights (generated at runtime)
+│   ├── modelB/                   # Backup model weights (generated at runtime)
+│   └── predictions/              # Test set predictions (generated at runtime)
+└── submission/                   # Original notebook and raw training outputs
+    ├── main.ipynb                # Original Jupyter notebook
+    ├── checkscores.py            # Original score aggregation script
+    ├── dataset/                  # Original dataset CSVs
+    ├── export/                   # Original training exports
+    ├── final/                    # Final combined scores
+    ├── modelA/                   # Original best model weights
+    ├── modelB/                   # Original backup model weights
+    ├── predictions/              # Original test set predictions
+    └── combined_scores.csv       # Aggregated scores CSV
+```
+
+### Running the Python Version
+
+```bash
+cd python/
+python main.py           # Train all networks and export predictions
+python checkscores.py    # Aggregate and rank scores from export/
+```
+
+---
+
 ## Table of Contents
 
+- [Project Structure](#project-structure)
 - [Initializing the Libraries](#initializing-the-libraries)
 - [The Dataset](#the-dataset)
   - [Dataset Distribution](#dataset-distribution)
