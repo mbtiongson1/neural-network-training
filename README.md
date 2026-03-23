@@ -86,8 +86,11 @@ The following libraries are required:
 | `os`, `csv` | File I/O for loading datasets and exporting results |
 | `time` | Tracking training duration |
 
+You can install these dependencies using the provided `requirements.txt` file within the `python` directory:
+
 ```bash
-pip install numpy matplotlib imblearn imbalanced-learn
+cd python/
+pip install -r requirements.txt
 ```
 
 ---
@@ -368,6 +371,7 @@ Trained weights are loaded from CSV files using the `loadWeights` function, whic
 The `runPredictions` function takes the loaded weights and the test set, reconstructs the network layers, and performs a forward pass for each test sample. Predictions are determined by taking the `argmax` of the output layer activations.
 
 The best two models were used to generate predictions:
+
 - **Network B improved** (Leaky ReLU) → `predictions/networkB_improv_predictions.csv`
 - **Network A improved fast** (Tanh) → `predictions/networkA_improv_fast_predictions.csv`
 
