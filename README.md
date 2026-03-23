@@ -7,8 +7,64 @@ A Multilayer Perceptron (MLP) Neural Network trained using the Backpropagation A
 
 ---
 
+## Project Structure
+
+```
+PA3 - Neural Network/
+├── LICENSE
+├── README.md
+├── .gitignore
+├── src/                          # Additional source files
+├── python/                       # Modular Python refactor of main.ipynb
+│   ├── main.py                   # Main execution engine (run this)
+│   ├── activations.py            # Activation functions and derivatives
+│   ├── network.py                # OutputLayer, HiddenLayer, Epoch classes
+│   ├── utils.py                  # Utilities: Partition, train, predictions, charts
+│   ├── checkscores.py            # Score aggregation tool
+│   ├── dataset/                  # Copy of the dataset for standalone execution
+│   ├── figures/                  # Generated charts and learning curves
+│   ├── export/                   # Training artifacts (generated at runtime)
+│   ├── modelA/                   # Best model weights (generated at runtime)
+│   ├── modelB/                   # Backup model weights (generated at runtime)
+│   └── predictions/              # Test set predictions (generated at runtime)
+└── submission/                   # Original notebook and raw training outputs
+    ├── main.ipynb                # Original Jupyter notebook
+    ├── checkscores.py            # Original score aggregation script
+    ├── dataset/                  # Original dataset CSVs
+    ├── export/                   # Original training exports
+    ├── final/                    # Final combined scores
+    ├── modelA/                   # Original best model weights
+    ├── modelB/                   # Original backup model weights
+    ├── predictions/              # Original test set predictions
+    └── combined_scores.csv       # Aggregated scores CSV
+```
+
+### Running the Python Version
+
+```bash
+cd python/
+python main.py           # Train all networks and export predictions
+python checkscores.py    # Aggregate and rank scores from export/
+```
+
+### Experimenting with Custom Configurations
+
+If you would like to run a single configuration without training the full suite of networks, a custom run feature is provided:
+
+1. Open `python/config.py` and edit the `NetworkC` dictionary (you can tweak hyperparameters, learning rates, or activation functions).
+2. Inside `python`, run the custom script:
+
+   ```bash
+   python maincustom.py
+   ```
+
+3. The model weight outputs will be exported to `modelCustom/trained_weights.csv`, the plots will be labeled as "Custom", and the predictions will be saved to `predictions/predictions_for_test_custom.csv`.
+
+---
+
 ## Table of Contents
 
+- [Project Structure](#project-structure)
 - [Initializing the Libraries](#initializing-the-libraries)
 - [The Dataset](#the-dataset)
   - [Dataset Distribution](#dataset-distribution)
@@ -43,8 +99,11 @@ The following libraries are required:
 | `os`, `csv` | File I/O for loading datasets and exporting results |
 | `time` | Tracking training duration |
 
+You can install these dependencies using the provided `requirements.txt` file within the `python` directory:
+
 ```bash
-pip install numpy matplotlib imblearn imbalanced-learn
+cd python/
+pip install -r requirements.txt
 ```
 
 ---
@@ -325,6 +384,7 @@ Trained weights are loaded from CSV files using the `loadWeights` function, whic
 The `runPredictions` function takes the loaded weights and the test set, reconstructs the network layers, and performs a forward pass for each test sample. Predictions are determined by taking the `argmax` of the output layer activations.
 
 The best two models were used to generate predictions:
+
 - **Network B improved** (Leaky ReLU) → `predictions/networkB_improv_predictions.csv`
 - **Network A improved fast** (Tanh) → `predictions/networkA_improv_fast_predictions.csv`
 
