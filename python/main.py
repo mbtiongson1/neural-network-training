@@ -10,6 +10,7 @@ This script is the consolidated, pruned Python equivalent of main.ipynb.
 
 import numpy as np
 import os
+# Trigger diagnostics
 
 # ─── 1. Loading the Dataset ──────────────────────────────────────────────────
 # The dataset is loaded from CSV files in the dataset/ directory.

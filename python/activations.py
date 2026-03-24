@@ -51,3 +51,4 @@ def callActivation(method, v, config):
         return tanh(v, config['a_tanh'], config['b_tanh'])
     else:
         return leakyrelu(v, config['a_relu'])
+# Trigger diagnostics
