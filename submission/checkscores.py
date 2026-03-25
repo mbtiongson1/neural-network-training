@@ -3,15 +3,13 @@ import os
 from pathlib import Path
 
 def loadCSV(filepath):
-    """Load a CSV as a list of lists, stripping whitespace."""
     data = []
     with open(filepath, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             if not row:
                 continue
-            row = [v.strip() for v in row]
-            data.append(row)
+            data.append([v.strip() for v in row])
     return data
 
 def findScoresFiles(rootdir):
@@ -40,23 +38,33 @@ def combineScores(rootdir, outputfile):
         network = extractNetworkName(filepath)
         rows = loadCSV(filepath)
 
-        for row in rows:
-            cleaned = {f'col{i}': v for i, v in enumerate(row)}
-            cleaned['network'] = network
-            # map the correct column to f1_macro
+        if len(rows) < 2:
+            print(f'Skipping {network}: not enough rows')
+            continue
+
+        headers = rows[0]
+
+        for row in rows[1:]:
+            if row[0] == 'Epoch':
+                continue
+
+            cleaned = {'network': network}
+            for i, col in enumerate(headers):
+                cleaned[col] = row[i] if i < len(row) else ''
+
             try:
-                cleaned['f1_macro'] = float(row[45])  # adjust index as needed
-            except (IndexError, ValueError):
+                cleaned['f1_macro'] = float(cleaned.get('f1_macro', 0))
+            except ValueError:
                 cleaned['f1_macro'] = 0.0
+
             alldata.append(cleaned)
 
-        print(f'Loaded {len(rows)} rows from {network}')
+        print(f'Loaded {len(rows) - 1} rows from {network}')
 
     if not alldata:
         print('No data to write')
         return
 
-    # Write combined CSV
     allkeys = set()
     for row in alldata:
         allkeys.update(row.keys())
@@ -68,17 +76,11 @@ def combineScores(rootdir, outputfile):
         writer.writerows(alldata)
 
     print(f'\nCombined {len(alldata)} total rows written to {outputfile}')
+    outputFinal(alldata, fieldnames)
 
-    # Output final scores
-    outputFinal(alldata)
-
-def outputFinal(data):
+def outputFinal(data, fieldnames):
     os.makedirs('final', exist_ok=True)
-    allkeys = set()
-    for row in data:
-        allkeys.update(row.keys())
 
-    fieldnames = ['network'] + sorted([k for k in allkeys if k != 'network'])
     fullpath = os.path.join('final', 'full_scores.csv')
     with open(fullpath, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -86,13 +88,11 @@ def outputFinal(data):
         writer.writerows(data)
     print(f'Full scores written to {fullpath}')
 
-    # Only rows with f1_macro > 0
     valid = [row for row in data if row.get('f1_macro', 0) > 0]
     if not valid:
-        print("No valid rows with f1_macro > 0")
+        print('No valid rows with f1_macro > 0')
         return
 
-    # Best row by f1_macro
     best = max(valid, key=lambda x: x['f1_macro'])
     bestpath = os.path.join('final', 'scores.csv')
     with open(bestpath, 'w', newline='') as f:
