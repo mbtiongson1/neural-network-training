@@ -5,13 +5,11 @@ from pathlib import Path
 def loadCSV(filepath):
     data = []
     with open(filepath, 'r') as f:
-        reader = csv.DictReader(f)
-        if reader.fieldnames:
-            print(f'  Columns: {reader.fieldnames}')
+        reader = csv.reader(f)
         for row in reader:
-            cleaned = {k.strip() if k else None: v for k, v in row.items()}
-            cleaned = {k: v for k, v in cleaned.items() if k is not None}
-            data.append(cleaned)
+            if not row: 
+                continue
+            data.append(row)
     return data
 
 def findScoresFiles(rootdir):
