@@ -8,10 +8,15 @@
 \usepackage{graphicx}
 \graphicspath{{../figures/}{submission/figures/}{figures/}}
 \usepackage{url}
+\usepackage{xurl}
 \usepackage{microtype}
 \makeatletter
 \providecommand{\@copyrightspace}{}
 \makeatother
+\hbadness=6000
+\vbadness=2000
+\raggedbottom
+\setlength{\emergencystretch}{2em}
 
 \begin{document}
 
@@ -80,14 +85,14 @@ The primary objectives of this report are:
 
 \subsection{Dataset Loading}
 
-The dataset is stored in three comma-separated files.  \texttt{data.csv}
-contains 3\,486 instances, each with 354 numerical features.
-\texttt{data\_labels.csv} holds the corresponding integer class labels
-$y \in \{1, 2, \ldots, 8\}$.  \texttt{test\_set.csv} contains an
-unlabelled test partition for which predictions are ultimately exported.
-After loading, each label $y_i$ is one-hot encoded into an
-$(N \times 8)$ matrix $\mathbf{D}$, where row $i$ has a $1.0$ at
-position $y_i - 1$ and $0.0$ elsewhere:
+The dataset is stored in three comma-separated files.
+\path{data.csv} contains 3\,486 instances, each with 354 numerical
+features. \path{data_labels.csv} holds the corresponding integer class
+labels $y \in \{1, 2, \ldots, 8\}$, while \path{test_set.csv} contains
+the unlabelled test partition used for final prediction export. After
+loading, each label $y_i$ is one-hot encoded into an $(N \times 8)$
+matrix $\mathbf{D}$, where row $i$ has a $1.0$ at position $y_i - 1$
+and $0.0$ elsewhere:
 
 \begin{equation}
   D_{ik} =
@@ -226,7 +231,7 @@ configurations.  Larger $a$ steepens the sigmoid.
   \varphi'(v) = \frac{b}{a}\,(a - o)\,(a + o)
 \end{equation}
 
-Following standard practice~\cite{lecun1998}, the constants
+Following standard practice, the constants
 $a = 1.716$ and $b = 0.66667$ are used for the hidden layers of
 Network~A.
 
@@ -431,19 +436,18 @@ $(0.874,\;0.889)$.  In both cases, the models failed to satisfy the
 notebook's convergence criterion that both training and validation MSE
 drop below 0.02 within the 100-epoch budget.
 
-Lowering the learning rate to 0.10 or 0.05 was what made learning
-possible, but the two activation families still behaved differently.
-The tuned Tanh models converged more smoothly, and all four non-default
-variants eventually met the 0.02 criterion.  The earliest was
+Lower learning rates of 0.10 and 0.05 were what made learning possible,
+but the two activation families still behaved differently. The tuned
+Tanh models converged more smoothly, and all four non-default variants
+eventually met the 0.02 criterion. The earliest was
 \texttt{networkA\_improv2\_fast}, which crossed the threshold at
-epoch~44.  The tuned Leaky ReLU models achieved the highest final
+epoch~44. The tuned Leaky ReLU models achieved the highest final
 classification scores, but their validation curves were visibly more
-erratic.  The best overall
-model, \texttt{networkB\_improv2}, reached the threshold only at
-epoch~73, while \texttt{networkB\_improv2\_fast} shortened this to
-epoch~51 at a small cost in F1 score.  The reduced-width Leaky ReLU
-model, \texttt{networkB\_improv2\_small}, remained unstable and never
-converged.
+erratic. The best overall model, \texttt{networkB\_improv2}, reached the
+threshold only at epoch~73, while \texttt{networkB\_improv2\_fast}
+reduced this to epoch~51 at a small cost in F1 score. The reduced-width
+Leaky ReLU model, \texttt{networkB\_improv2\_small}, remained unstable
+and never converged.
 
 \subsection{Scores Summary}
 
@@ -480,17 +484,19 @@ Configuration & Epoch & F1 & MCC & Acc. & Time-adj. (s) \\
 \end{tabular}
 \end{table*}
 
-The ranking separates the tuned models from the failed ones very
-clearly.  Seven configurations achieved macro F1 above 0.96, three of
-them above 0.98, whereas the two defaults and the reduced-width Leaky
-ReLU run fell far outside that cluster.  If convergence speed is also
-considered, \texttt{networkA\_improv2\_fast} offers the strongest
+\begin{sloppypar}
+The ranking separates the tuned models from the failed ones clearly.
+Seven configurations achieved macro F1 above 0.96, and three exceeded
+0.98, whereas the two defaults and the reduced-width Leaky ReLU run fell
+far outside that cluster. If convergence speed is also considered,
+\texttt{networkA\_improv2\_fast} offers the strongest
 efficiency--accuracy compromise: it reaches the target error in 44
-epochs and retains a macro F1 of 0.9835.  Although
+epochs and still attains macro F1 $=0.9835$. Although
 \texttt{networkA\_improv} has a slightly smaller time-adjusted cost
 (29.26\,s versus 29.70\,s), the higher-momentum Tanh model gives a
 clearer gain in predictive quality for nearly the same normalized
 training expense.
+\end{sloppypar}
 
 \begin{figure*}[ht]
 \centering
@@ -523,11 +529,11 @@ $\alpha=0.90$, and $H=12$; it converges much earlier at epoch~44 while
 still reaching macro F1 $=0.98352$.
 
 These are also the two models exported, ready for production.  The Tanh
-weights are saved to \texttt{modelA/trained\_weights.csv}, the Leaky
-ReLU weights to \texttt{modelB/trained\_weights.csv}, and their
+weights are saved to \path{modelA/trained_weights.csv}, the Leaky
+ReLU weights to \path{modelB/trained_weights.csv}, and their
 respective 701-sample test-set predictions are written to
-\texttt{predictions/predictions\_for\_test\_tanh.csv} and
-\texttt{predictions/predictions\_for\_test\_leakyrelu.csv}.  The
+\path{predictions/predictions_for_test_tanh.csv} and
+\path{predictions/predictions_for_test_leakyrelu.csv}.  The
 distinction is important: the Leaky ReLU model is the best by absolute
 validation score, whereas the Tanh model is retained because it gives
 the strongest speed--performance compromise within its activation
@@ -551,23 +557,24 @@ choosing an appropriate step size.
 
 \subsection{Role of Momentum}
 
+\begin{sloppypar}
 The notebook results show that momentum only became useful after the
-learning rate had already been reduced to a stable range.  Holding
+learning rate had already been reduced to a stable range. Holding
 $\eta=0.05$ and $H=12$ fixed, increasing $\alpha$ from 0.50 to 0.90
-reduced the convergence epoch for Tanh from 74
-(\texttt{networkA\_improv2}) to 44
-(\texttt{networkA\_improv2\_fast}) and simultaneously improved macro F1
-from 0.97609 to 0.98352.  For Leaky ReLU, the same increase reduced the
-convergence epoch from 73 (\texttt{networkB\_improv2}) to 51
-(\texttt{networkB\_improv2\_fast}), but at a slight cost in macro F1
+reduced the Tanh convergence epoch from 74 in
+\texttt{networkA\_improv2} to 44 in
+\texttt{networkA\_improv2\_fast}, while also improving macro F1 from
+0.97609 to 0.98352. For Leaky ReLU, the same change reduced the
+convergence epoch from 73 in \texttt{networkB\_improv2} to 51 in
+\texttt{networkB\_improv2\_fast}, but at a slight cost in macro F1
 (0.98861 down to 0.98530).
+\end{sloppypar}
 
-Momentum acts like an
-``epoch-skipping'' term: it compresses the loss curve horizontally and
-is best viewed as a convergence-speed control rather than a guaranteed
-way to improve the final optimum.  High momentum was not enough to save
-the default $\eta=0.85$ runs, so it should be tuned only after the step
-size is already well behaved.
+Momentum acts like an ``epoch-skipping'' term: it compresses the loss
+curve horizontally and is best viewed as a convergence-speed control
+rather than as a guarantee of a better final optimum. High momentum was
+not enough to save the default $\eta=0.85$ runs, so it should be tuned
+only after the step size is already well behaved.
 
 \subsection{Hidden Layer Width}
 
@@ -589,13 +596,15 @@ hardware-driven compromise.
 
 \subsection{Activation Function Comparison}
 
-Leaky ReLU produced the strongest peak validation scores, occupying the
-top two positions in Table~\ref{tab:scores} with
-\texttt{networkB\_improv2} and \texttt{networkB\_improv2\_fast}.  The
+\begin{sloppypar}
+Leaky ReLU produced the strongest peak validation scores, taking the top
+two positions in Table~\ref{tab:scores} through
+\texttt{networkB\_improv2} and \texttt{networkB\_improv2\_fast}. The
 best Tanh model, \texttt{networkA\_improv2\_fast}, ranked third overall
 with macro F1 $=0.98352$, roughly 0.51 percentage points below the best
-Leaky ReLU result.  If the comparison stopped at peak F1, Leaky ReLU
+Leaky ReLU result. If the comparison stopped at peak F1, Leaky ReLU
 would be the clear winner.
+\end{sloppypar}
 
 The learning-curve evidence adds a more nuanced interpretation.  The
 notebook commentary correctly notes that Leaky ReLU exhibited more
@@ -646,11 +655,11 @@ following conclusions are drawn:
         0.02503, respectively.  The original $\eta=0.85$ and
         $\alpha=0.90$ setting was simply too aggressive for this task.
 
-  \item \textbf{Lowering the learning rate was the main factor that made
+  \item \begin{sloppypar}\textbf{Lowering the learning rate was the main factor that made
         training succeed.} Once $\eta$ was reduced to 0.10 or 0.05, both
         activation families produced strong models, and the best overall
         result came from \texttt{networkB\_improv2} with macro
-        F1 $=0.98861$.
+        F1 $=0.98861$.\end{sloppypar}
 
   \item \textbf{Higher momentum improved convergence speed only after
         the learning rate had been stabilized.} Raising $\alpha$ from
@@ -664,12 +673,12 @@ following conclusions are drawn:
         should therefore be treated as a capacity constraint, not just a
         speed knob.
 
-  \item \textbf{Leaky ReLU delivered the best peak accuracy, while Tanh
+  \item \begin{sloppypar}\textbf{Leaky ReLU delivered the best peak accuracy, while Tanh
         provided the smoother efficiency--accuracy tradeoff.}
-        \texttt{networkB\_improv2} is the best model when prediction
-        quality is the sole criterion, whereas
-        \texttt{networkA\_improv2\_fast} is the strongest Tanh choice
-        when faster convergence is also valued.
+        When prediction quality is the sole criterion,
+        \texttt{networkB\_improv2} is the best model; when faster
+        convergence also matters, \texttt{networkA\_improv2\_fast} is
+        the strongest Tanh choice.\end{sloppypar}
 
   \item \textbf{SMOTE effectively neutralized class imbalance,} enabling
         all eight classes to contribute proportionally to the gradient
@@ -677,168 +686,6 @@ following conclusions are drawn:
         fold, after the train/validation split, to remove leakage from
         the validation set.
 \end{enumerate}
-
-\clearpage
-\appendix
-\section{Additional Figures}
-
-The following figures were generated during preprocessing and model
-tuning but were not included in the main narrative because the paired
-summary plots already captured the key comparisons.  They are included
-here to preserve the complete visual record of the experiments.
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.31\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{class_distribution:_original_dataset.png}\\[0.25em]
-  \small Alternate original-dataset export
-\end{minipage}
-\hfill
-\begin{minipage}{0.31\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{class_distribution_of_training_set.png}\\[0.25em]
-  \small Training split
-\end{minipage}
-\hfill
-\begin{minipage}{0.31\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{class_distribution_of_validation_set.png}\\[0.25em]
-  \small Validation split
-\end{minipage}
-\caption{Supplementary class-distribution snapshots.  The left panel is
-an alternate export of the original dataset distribution, while the
-centre and right panels show the class frequencies in the post-SMOTE
-training and validation partitions.  These views complement
-Figure~\ref{fig:piecharts} by showing that, after balancing, both splits
-remain close to uniform; the later performance differences are therefore
-better explained by hyperparameter choices than by residual class skew.}
-\label{fig:appendix-class-balance}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_a.png}\\[0.25em]
-  \small \texttt{networkA}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_a_improved.png}\\[0.25em]
-  \small \texttt{networkA\_improv}
-\end{minipage}
-\caption{Individual learning curves for the baseline Tanh model and its
-first stable variant.  This pair isolates the effect of moving from the
-aggressive default setting to the first workable configuration:
-\texttt{networkA} never enters a useful learning regime, while
-\texttt{networkA\_improv} provides the first smooth descent that leads
-to the high-F1 cluster reported in Table~\ref{tab:scores}.}
-\label{fig:appendix-network-a-early}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2.png}\\[0.25em]
-  \small \texttt{networkA\_improv2}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2_(fast).png}\\[0.25em]
-  \small \texttt{networkA\_improv2\_fast}
-\end{minipage}
-\caption{Individual learning curves for the two strongest 12-node Tanh
-models.  Holding the hidden width fixed at $H=12$, the lower learning
-rate keeps the loss trajectory well behaved, while the higher-momentum
-``fast'' variant mainly compresses the curve horizontally and reaches
-the stopping criterion earlier.  This agrees with the discussion that
-momentum improved convergence speed more than it changed the final
-optimum.}
-\label{fig:appendix-network-a-best}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.62\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2_(small).png}\\[0.25em]
-  \small \texttt{networkA\_improv2\_small}
-\end{minipage}
-\caption{Learning curve for the reduced-width Tanh network.  This figure
-supports the claim that the $H=5$ Tanh model is still viable, but only
-as a compute-saving compromise: it converges later and slightly below
-the 12-node fast variant, matching its weaker efficiency--accuracy
-tradeoff in Table~\ref{tab:scores}.}
-\label{fig:appendix-network-a-small}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_b.png}\\[0.25em]
-  \small \texttt{networkB}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_b_improved.png}\\[0.25em]
-  \small \texttt{networkB\_improv}
-\end{minipage}
-\caption{Individual learning curves for the baseline Leaky ReLU model
-and its first stable variant.  As with the Tanh family, lowering the
-learning rate is the change that rescues training; the default
-\texttt{networkB} run remains unstable, whereas
-\texttt{networkB\_improv} moves into the high-performing regime even
-though its validation trajectory is still less smooth than the
-comparable Tanh runs.}
-\label{fig:appendix-network-b-early}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2.png}\\[0.25em]
-  \small \texttt{networkB\_improv2}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2_(fast).png}\\[0.25em]
-  \small \texttt{networkB\_improv2\_fast}
-\end{minipage}
-\caption{Individual learning curves for the two best 12-node Leaky ReLU
-models.  These plots complement Figure~\ref{fig:learningcurve} by
-showing the main tradeoff within the ReLU family: \texttt{networkB\_improv2}
-achieves the strongest final F1, while \texttt{networkB\_improv2\_fast}
-reaches a good solution materially earlier at a small cost in the final
-score.}
-\label{fig:appendix-network-b-best}
-\end{figure*}
-
-\begin{figure*}[p]
-\centering
-\begin{minipage}{0.62\textwidth}
-  \centering
-  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2_(small).png}\\[0.25em]
-  \small \texttt{networkB\_improv2\_small}
-\end{minipage}
-\caption{Learning curve for the reduced-width Leaky ReLU network.  This
-is the clearest failure case among the tuned configurations: shrinking
-the hidden layers to $H=5$ makes optimisation unstable enough that the
-model never satisfies the convergence target and its macro F1 collapses
-to 0.55645.  The figure therefore reinforces the report's conclusion
-that hidden-layer width interacts much more strongly with Leaky ReLU
-than with Tanh.}
-\label{fig:appendix-network-b-small}
-\end{figure*}
-
-\clearpage
 
 % -----------------------------------------------------------------------
 % \section{References}
@@ -864,13 +711,117 @@ J.~Brownlee,
 [Online]. Available:
 \url{https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/}
 
-\bibitem{lecun1998}
-Y.~LeCun, L.~Bottou, G.~B. Orr, and K.-R. M\"{u}ller,
-``Efficient backprop,''
-in \textit{Neural Networks: Tricks of the Trade},
-G.~Orr and K.-R. M\"{u}ller, Eds.
-Springer, Berlin, Heidelberg, 1998, pp.~9--50.
-
 \end{thebibliography}
+
+% \clearpage
+\appendix
+\section{Class-Distribution Pie Charts}
+
+These supplementary pie charts show the post-SMOTE class composition of
+the training and validation splits.
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{class_distribution_of_training_set.png}
+\caption{Training-split class distribution after SMOTE.}
+\label{fig:appendix-class-training}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{class_distribution_of_validation_set.png}
+\caption{Validation-split class distribution after SMOTE.}
+\label{fig:appendix-class-validation}
+\end{figure}
+\clearpage
+\section{Learning Curves: Network A}
+
+These figures collect the individual learning curves that support the
+family-level comparison in Figure~\ref{fig:learningcurve} for Network A.
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_a.png}
+\caption{Learning curve for \texttt{networkA}.  The default Tanh model
+does not converge.}
+\label{fig:appendix-network-a}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_a_improved.png}
+\caption{Learning curve for \texttt{networkA\_improv}.  Lowering the
+learning rate restores stable Tanh training.}
+\label{fig:appendix-network-a-improv}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_a_improved_2.png}
+\caption{Learning curve for \texttt{networkA\_improv2}.  The lower
+learning rate keeps the loss trajectory smooth.}
+\label{fig:appendix-network-a-improv2}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_a_improved_2_.png}
+\caption{\sloppy Learning curve for \texttt{networkA\_improv2\_fast}. Higher
+momentum produces earlier convergence.}
+\label{fig:appendix-network-a-fast}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_a_improved_2_(small).png}
+\caption{Learning curve for \texttt{networkA\_improv2\_small}.  The
+$H=5$ Tanh model still converges, but more slowly.}
+\label{fig:appendix-network-a-small}
+\end{figure}
+
+\clearpage
+\section{Learning Curves: Network B}
+
+These figures collect the individual learning curves that support the
+family-level comparison in Figure~\ref{fig:learningcurve} for Network B.
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_b.png}
+\caption{Learning curve for \texttt{networkB}.  The default Leaky ReLU
+model remains unstable.}
+\label{fig:appendix-network-b}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_b_improved.png}
+\caption{Learning curve for \texttt{networkB\_improv}.  The tuned model
+learns effectively after the learning-rate reduction.}
+\label{fig:appendix-network-b-improv}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_b_improved_2.png}
+\caption{Learning curve for \texttt{networkB\_improv2}.  This run gives
+the best final F1.}
+\label{fig:appendix-network-b-improv2}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_b_improved_2_.png}
+\caption{Learning curve for \texttt{networkB\_improv2\_fast}.  The fast
+variant converges earlier with a small score tradeoff.}
+\label{fig:appendix-network-b-fast}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+  \includegraphics[width=\columnwidth]{learning_curve_network_b_improved_2_(small).png}
+\caption{Learning curve for \texttt{networkB\_improv2\_small}.  The
+$H=5$ configuration is the clearest tuned failure case.}
+\label{fig:appendix-network-b-small}
+\end{figure}
 
 \end{document}
