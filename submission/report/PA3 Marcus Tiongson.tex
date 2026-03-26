@@ -856,4 +856,375 @@ $H=5$ configuration is the clearest tuned failure case.}
 \label{fig:appendix-network-b-small}
 \end{figure}
 
+\clearpage
+\section{Confusion Matrix}
+
+This appendix section presents, for each trained network, the final
+validation scores from \texttt{scores.csv} together with the corresponding
+class-wise confusion-matrix statistics from \texttt{confusion\_matrix.csv}.
+
+\subsection{Network A Variants}
+
+\subsubsection{\texttt{networkA}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.13250 & 0.01656 & 0.12500 & 0.02925 & 0.00000 & 44.13 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 0 & 711 & 0 & 89 & 0.00000 & 0.00000 & 0.00000 \\
+Class 2 & 0 & 718 & 0 & 82 & 0.00000 & 0.00000 & 0.00000 \\
+Class 3 & 106 & 0 & 694 & 0 & 0.13250 & 1.00000 & 0.23400 \\
+Class 4 & 0 & 681 & 0 & 119 & 0.00000 & 0.00000 & 0.00000 \\
+Class 5 & 0 & 706 & 0 & 94 & 0.00000 & 0.00000 & 0.00000 \\
+Class 6 & 0 & 694 & 0 & 106 & 0.00000 & 0.00000 & 0.00000 \\
+Class 7 & 0 & 698 & 0 & 102 & 0.00000 & 0.00000 & 0.00000 \\
+Class 8 & 0 & 698 & 0 & 102 & 0.00000 & 0.00000 & 0.00000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkA\_improv}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.98000 & 0.98042 & 0.98066 & 0.98006 & 0.97725 & 52.25 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 88 & 708 & 3 & 1 & 0.96703 & 0.98876 & 0.97778 \\
+Class 2 & 82 & 716 & 2 & 0 & 0.97619 & 1.00000 & 0.98795 \\
+Class 3 & 106 & 693 & 1 & 0 & 0.99065 & 1.00000 & 0.99531 \\
+Class 4 & 117 & 681 & 0 & 2 & 1.00000 & 0.98319 & 0.99153 \\
+Class 5 & 94 & 706 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 6 & 104 & 685 & 9 & 2 & 0.92035 & 0.98113 & 0.94977 \\
+Class 7 & 102 & 698 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 8 & 91 & 697 & 1 & 11 & 0.98913 & 0.89216 & 0.93814 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkA\_improv2}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.97625 & 0.97732 & 0.97680 & 0.97609 & 0.97309 & 59.33 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 88 & 709 & 2 & 1 & 0.97778 & 0.98876 & 0.98324 \\
+Class 2 & 82 & 715 & 3 & 0 & 0.96471 & 1.00000 & 0.98204 \\
+Class 3 & 106 & 693 & 1 & 0 & 0.99065 & 1.00000 & 0.99531 \\
+Class 4 & 118 & 680 & 1 & 1 & 0.99160 & 0.99160 & 0.99160 \\
+Class 5 & 94 & 705 & 1 & 0 & 0.98947 & 1.00000 & 0.99471 \\
+Class 6 & 104 & 683 & 11 & 2 & 0.90435 & 0.98113 & 0.94118 \\
+Class 7 & 102 & 698 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 8 & 87 & 698 & 0 & 15 & 1.00000 & 0.85294 & 0.92063 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkA\_improv2\_fast}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.98250 & 0.98399 & 0.98383 & 0.98352 & 0.98011 & 67.50 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 89 & 710 & 1 & 0 & 0.98889 & 1.00000 & 0.99441 \\
+Class 2 & 81 & 718 & 0 & 1 & 1.00000 & 0.98780 & 0.99387 \\
+Class 3 & 106 & 694 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 4 & 113 & 681 & 0 & 6 & 1.00000 & 0.94958 & 0.97414 \\
+Class 5 & 94 & 706 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 6 & 101 & 693 & 1 & 5 & 0.99020 & 0.95283 & 0.97115 \\
+Class 7 & 102 & 698 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 8 & 100 & 686 & 12 & 2 & 0.89286 & 0.98039 & 0.93458 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkA\_improv2\_small}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.98125 & 0.98124 & 0.98144 & 0.98108 & 0.97860 & 42.36 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 86 & 710 & 1 & 3 & 0.98851 & 0.96629 & 0.97727 \\
+Class 2 & 82 & 713 & 5 & 0 & 0.94253 & 1.00000 & 0.97041 \\
+Class 3 & 106 & 693 & 1 & 0 & 0.99065 & 1.00000 & 0.99531 \\
+Class 4 & 118 & 677 & 4 & 1 & 0.96721 & 0.99160 & 0.97925 \\
+Class 5 & 94 & 706 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 6 & 102 & 691 & 3 & 4 & 0.97143 & 0.96226 & 0.96682 \\
+Class 7 & 102 & 698 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 8 & 95 & 697 & 1 & 7 & 0.98958 & 0.93137 & 0.95960 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsection{Network B Variants}
+
+\subsubsection{\texttt{networkB}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.11125 & 0.01391 & 0.12500 & 0.02503 & 0.00000 & 50.06 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 89 & 0 & 711 & 0 & 0.11125 & 1.00000 & 0.20022 \\
+Class 2 & 0 & 718 & 0 & 82 & 0.00000 & 0.00000 & 0.00000 \\
+Class 3 & 0 & 694 & 0 & 106 & 0.00000 & 0.00000 & 0.00000 \\
+Class 4 & 0 & 681 & 0 & 119 & 0.00000 & 0.00000 & 0.00000 \\
+Class 5 & 0 & 706 & 0 & 94 & 0.00000 & 0.00000 & 0.00000 \\
+Class 6 & 0 & 694 & 0 & 106 & 0.00000 & 0.00000 & 0.00000 \\
+Class 7 & 0 & 698 & 0 & 102 & 0.00000 & 0.00000 & 0.00000 \\
+Class 8 & 0 & 698 & 0 & 102 & 0.00000 & 0.00000 & 0.00000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkB\_improv}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.96000 & 0.96467 & 0.96144 & 0.96129 & 0.95481 & 74.36 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 87 & 709 & 2 & 2 & 0.97753 & 0.97753 & 0.97753 \\
+Class 2 & 82 & 714 & 4 & 0 & 0.95349 & 1.00000 & 0.97619 \\
+Class 3 & 106 & 694 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 4 & 114 & 681 & 0 & 5 & 1.00000 & 0.95798 & 0.97854 \\
+Class 5 & 94 & 705 & 1 & 0 & 0.98947 & 1.00000 & 0.99471 \\
+Class 6 & 103 & 671 & 23 & 3 & 0.81746 & 0.97170 & 0.88793 \\
+Class 7 & 87 & 698 & 0 & 15 & 1.00000 & 0.85294 & 0.92063 \\
+Class 8 & 95 & 696 & 2 & 7 & 0.97938 & 0.93137 & 0.95477 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkB\_improv2}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.98875 & 0.98804 & 0.98933 & 0.98861 & 0.98714 & 96.92 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 89 & 708 & 3 & 0 & 0.96739 & 1.00000 & 0.98343 \\
+Class 2 & 82 & 716 & 2 & 0 & 0.97619 & 1.00000 & 0.98795 \\
+Class 3 & 106 & 694 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 4 & 118 & 681 & 0 & 1 & 1.00000 & 0.99160 & 0.99578 \\
+Class 5 & 94 & 706 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 6 & 102 & 692 & 2 & 4 & 0.98077 & 0.96226 & 0.97143 \\
+Class 7 & 102 & 698 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 8 & 98 & 696 & 2 & 4 & 0.98000 & 0.96078 & 0.97030 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkB\_improv2\_fast}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.98500 & 0.98565 & 0.98516 & 0.98530 & 0.98286 & 87.42 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 86 & 709 & 2 & 3 & 0.97727 & 0.96629 & 0.97175 \\
+Class 2 & 82 & 718 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 3 & 106 & 694 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 4 & 118 & 678 & 3 & 1 & 0.97521 & 0.99160 & 0.98333 \\
+Class 5 & 94 & 706 & 0 & 0 & 1.00000 & 1.00000 & 1.00000 \\
+Class 6 & 101 & 694 & 0 & 5 & 1.00000 & 0.95283 & 0.97585 \\
+Class 7 & 102 & 696 & 2 & 0 & 0.98077 & 1.00000 & 0.99029 \\
+Class 8 & 99 & 693 & 5 & 3 & 0.95192 & 0.97059 & 0.96117 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\subsubsection{\texttt{networkB\_improv2\_small}}
+\noindent\textbf{Final validation scores (\texttt{scores.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+Epoch & Accuracy & Macro Prec. & Macro Rec. & Macro F1 & Matthews & Time (s) \\
+\midrule
+100 & 0.61250 & 0.56018 & 0.60893 & 0.55645 & 0.59344 & 45.97 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
+\noindent\textbf{Class-wise confusion matrix (\texttt{confusion\_matrix.csv})}
+\begin{center}
+\scriptsize
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Class & TP & TN & FP & FN & Precision & Recall & F1 \\
+\midrule
+Class 1 & 0 & 711 & 0 & 89 & 0.00000 & 0.00000 & 0.00000 \\
+Class 2 & 77 & 697 & 21 & 5 & 0.78571 & 0.93902 & 0.85556 \\
+Class 3 & 0 & 694 & 0 & 106 & 0.00000 & 0.00000 & 0.00000 \\
+Class 4 & 117 & 653 & 28 & 2 & 0.80690 & 0.98319 & 0.88636 \\
+Class 5 & 93 & 702 & 4 & 1 & 0.95876 & 0.98936 & 0.97382 \\
+Class 6 & 82 & 455 & 239 & 24 & 0.25545 & 0.77358 & 0.38407 \\
+Class 7 & 87 & 692 & 6 & 15 & 0.93548 & 0.85294 & 0.89231 \\
+Class 8 & 34 & 686 & 12 & 68 & 0.73913 & 0.33333 & 0.45946 \\
+\bottomrule
+\end{tabular}%
+}
+\end{center}
+
 \end{document}
