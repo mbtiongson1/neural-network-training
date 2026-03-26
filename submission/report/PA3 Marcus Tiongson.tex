@@ -6,8 +6,12 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{graphicx}
+\graphicspath{{../figures/}{submission/figures/}{figures/}}
 \usepackage{url}
 \usepackage{microtype}
+\makeatletter
+\providecommand{\@copyrightspace}{}
+\makeatother
 
 \begin{document}
 
@@ -131,12 +135,12 @@ SMOTE.
 \centering
 \begin{minipage}{0.48\textwidth}
   \centering
-  \includegraphics[width=\textwidth]{figures/class_distribution:_original_dataset.png}
+  \includegraphics[width=\textwidth]{class_distribution:_original_dataset.png}
 \end{minipage}
 \hfill
 \begin{minipage}{0.48\textwidth}
   \centering
-  \includegraphics[width=\textwidth]{figures/class_distribution_after_smote.png}
+  \includegraphics[width=\textwidth]{class_distribution_after_smote.png}
 \end{minipage}
 \caption{Class distribution of the original dataset (left) and after SMOTE
 oversampling (right).  Class~1 accounts for 46.6\% of the 3\,486 original
@@ -208,7 +212,7 @@ recomputing $v$ during backpropagation.
   \varphi'(v) = a \cdot o\,(1 - o)
 \end{equation}
 
-The parameter $a = 1.0$ is used at the output layer for all network
+The parameter $a = 2.0$ is used at the output layer for all network
 configurations.  Larger $a$ steepens the sigmoid.
 
 \subsubsection{Hyperbolic Tangent (Tanh)}
@@ -381,95 +385,153 @@ Two base network architectures are evaluated: \textbf{Network A} uses
 Tanh activation ($a = 1.716,\; b = 0.66667$) in both hidden layers, and
 \textbf{Network B} uses Leaky ReLU ($\gamma = 0.01$) in both hidden
 layers.  Both networks use a Logistic output layer ($a = 1.0$).  Each
-configuration is first tested with the default hyperparameters, then
-improved iteratively.
+family is evaluated under five settings: the default configuration, a
+first stable run at $\eta=0.10$ and $\alpha=0.50$, a second run with a
+lower learning rate $\eta=0.05$, a high-momentum ``fast'' variant with $\alpha=0.90$, and a
+reduced-width $H=5$ variant.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
+\small
 \caption{Hyperparameter Configurations Tested}
 \label{tab:configs}
-\renewcommand{\arraystretch}{1.2}
+\renewcommand{\arraystretch}{1.1}
 \begin{tabular}{lcccc}
 \toprule
-Config & $\eta$ & $\alpha$ & $H$ & Activation \\
+Configuration & $\eta$ & $\alpha$ & $H$ & Activation \\
 \midrule
-A (default)        & 0.85 & 0.90 & 8  & Tanh   \\
-A (improved)       & 0.10 & 0.50 & 12 & Tanh   \\
-A (improved, fast) & 0.10 & 0.50 & 10 & Tanh   \\
-B (default)        & 0.85 & 0.90 & 8  & L-ReLU \\
-B (improved)       & 0.10 & 0.50 & 10 & L-ReLU \\
+\texttt{networkA}                 & 0.85 & 0.90 & 8  & Tanh \\
+\texttt{networkA\_improv}         & 0.10 & 0.50 & 12 & Tanh \\
+\texttt{networkA\_improv2}        & 0.05 & 0.50 & 12 & Tanh \\
+\texttt{networkA\_improv2\_fast}  & 0.05 & 0.90 & 12 & Tanh \\
+\texttt{networkA\_improv2\_small} & 0.05 & 0.90 & 5  & Tanh \\
+\texttt{networkB}                 & 0.85 & 0.90 & 8  & Leaky ReLU \\
+\texttt{networkB\_improv}         & 0.10 & 0.50 & 12 & Leaky ReLU \\
+\texttt{networkB\_improv2}        & 0.05 & 0.50 & 12 & Leaky ReLU \\
+\texttt{networkB\_improv2\_fast}  & 0.05 & 0.90 & 12 & Leaky ReLU \\
+\texttt{networkB\_improv2\_small} & 0.05 & 0.90 & 5  & Leaky ReLU \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 All configurations are trained for 100 epochs using mini-batch size
-$B = 8$.  The total number of weight-update iterations per run is
-$\frac{N_{\text{train}}}{B} \times 100$ with a final iteration index
-of 152\,501.
+$B = 8$.  After SMOTE and the fixed 800-sample validation split, the
+training set contains 12\,200 samples, so each run performs 1\,525
+mini-batch updates per epoch, or 152\,500 updates over 100 epochs.
 
 \subsection{Training and Validation Errors}
 
-With the default hyperparameters ($\eta = 0.85$, $\alpha = 0.90$), both
-Network A and Network B exhibited completely flat learning curves across
-all 100 epochs.  The training and validation MSE did not decrease,
-indicating that weight updates were overshooting the loss surface minimum
-on every step.
+The two default runs never entered a useful learning regime.  For
+\texttt{networkA}, the training/validation MSE moved from
+$(0.808,\;0.867)$ at epoch~1 to a plateau near $(0.875,\;0.867)$ and
+never improved thereafter.  \texttt{networkB} behaved slightly
+differently: it briefly reached minima of approximately
+$(0.401,\;0.394)$, but then drifted upward and finished near
+$(0.874,\;0.889)$.  In both cases, the models failed to satisfy the
+notebook's convergence criterion that both training and validation MSE
+drop below 0.02 within the 100-epoch budget.
 
-After reducing $\eta$ to 0.10 and $\alpha$ to 0.50, both networks
-converged rapidly.  Training error fell steeply within the first 20--30
-epochs and levelled off thereafter.  Validation error tracked the
-training error closely without diverging, indicating no meaningful
-overfitting within the 100-epoch budget.
+Lowering the learning rate to 0.10 or 0.05 was what made learning
+possible, but the two activation families still behaved differently.
+The tuned Tanh models converged more smoothly, and all four non-default
+variants eventually met the 0.02 criterion.  The earliest was
+\texttt{networkA\_improv2\_fast}, which crossed the threshold at
+epoch~44.  The tuned Leaky ReLU models achieved the highest final
+classification scores, but their validation curves were visibly more
+erratic.  The best overall
+model, \texttt{networkB\_improv2}, reached the threshold only at
+epoch~73, while \texttt{networkB\_improv2\_fast} shortened this to
+epoch~51 at a small cost in F1 score.  The reduced-width Leaky ReLU
+model, \texttt{networkB\_improv2\_small}, remained unstable and never
+converged.
 
 \subsection{Scores Summary}
 
 Table~\ref{tab:scores} reports the final evaluation metrics on the
-800-sample validation set for all five configurations.
+800-sample validation set for all ten configurations, ranked by the same
+macro-F1 criterion used in the notebook's \textit{Training Results}
+section.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
-\caption{Validation Set Performance (all 100 epochs, iteration 152\,501)}
+\small
+\caption{Validation-set summary ranked by macro F1.  ``Epoch'' denotes
+the first epoch at which both training and validation MSE fell below
+0.02; DNF indicates that this did not occur within 100 epochs.
+Time-adjusted cost is computed as $\text{Time}\times(\text{Epoch}/100)$
+for converged runs.}
 \label{tab:scores}
-\renewcommand{\arraystretch}{1.2}
+\renewcommand{\arraystretch}{1.1}
 \begin{tabular}{lccccc}
 \toprule
-Config & Acc. & Prec. & Rec. & F1 & MCC \\
+Configuration & Epoch & F1 & MCC & Acc. & Time-adj. (s) \\
 \midrule
-B improved       & 0.9863 & 0.9865 & 0.9868 & 0.9866 & 0.9843 \\
-A improved fast  & 0.9750 & 0.9759 & 0.9755 & 0.9748 & 0.9717 \\
-A improved       & 0.9738 & 0.9760 & 0.9747 & 0.9744 & 0.9703 \\
-A default        & 0.1275 & 0.0159 & 0.1250 & 0.0283 & 0.0000 \\
-B default        & 0.1175 & 0.0147 & 0.1250 & 0.0263 & 0.0000 \\
+\texttt{networkB\_improv2}        & 73  & 0.98861 & 0.98714 & 0.98875 & 70.75 \\
+\texttt{networkB\_improv2\_fast}  & 51  & 0.98530 & 0.98286 & 0.98500 & 44.58 \\
+\texttt{networkA\_improv2\_fast}  & 44  & 0.98352 & 0.98011 & 0.98250 & 29.70 \\
+\texttt{networkA\_improv2\_small} & 74  & 0.98108 & 0.97860 & 0.98125 & 31.34 \\
+\texttt{networkA\_improv}         & 56  & 0.98006 & 0.97725 & 0.98000 & 29.26 \\
+\texttt{networkA\_improv2}        & 74  & 0.97609 & 0.97309 & 0.97625 & 43.91 \\
+\texttt{networkB\_improv}         & 71  & 0.96129 & 0.95481 & 0.96000 & 52.80 \\
+\texttt{networkB\_improv2\_small} & DNF & 0.55645 & 0.59344 & 0.61250 & N/A   \\
+\texttt{networkA}                 & DNF & 0.02925 & 0.00000 & 0.13250 & N/A   \\
+\texttt{networkB}                 & DNF & 0.02503 & 0.00000 & 0.11125 & N/A   \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
-Training runtimes ranged from 38.6\,s (Network A default) to 43.6\,s
-(Network B improved).  The marginal time increase from 10 hidden nodes
-versus 12 was small but consistent.
+The ranking separates the tuned models from the failed ones very
+clearly.  Seven configurations achieved macro F1 above 0.96, three of
+them above 0.98, whereas the two defaults and the reduced-width Leaky
+ReLU run fell far outside that cluster.  If convergence speed is also
+considered, \texttt{networkA\_improv2\_fast} offers the strongest
+efficiency--accuracy compromise: it reaches the target error in 44
+epochs and retains a macro F1 of 0.9835.  Although
+\texttt{networkA\_improv} has a slightly smaller time-adjusted cost
+(29.26\,s versus 29.70\,s), the higher-momentum Tanh model gives a
+clearer gain in predictive quality for nearly the same normalized
+training expense.
 
-\begin{figure}[ht]
+\begin{figure*}[ht]
 \centering
-\includegraphics[width=\columnwidth]{figures/learningcurves.pdf}
-\caption{Training vs.\ validation MSE over 100 epochs for the two
-best-performing configurations.  Both converge within 40 epochs; the
-Leaky ReLU network (left) shows a brief plateau before epoch~15 due to
-the gradient clipping threshold.}
+\begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curves_of_network_a_compared.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.49\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curves_of_network_b_compared.png}
+\end{minipage}
+\caption{Training and validation MSE for the five Tanh configurations
+(left) and five Leaky ReLU configurations (right).  Lowering the
+learning rate enables convergence in both families, higher momentum
+compresses the number of epochs needed once the learning rate is
+stabilized, and the 5-node Leaky ReLU model is the clearest failure
+case.}
 \label{fig:learningcurve}
-\end{figure}
+\end{figure*}
 
-\subsection{Best Model and Predictions}
+\subsection{Best Model and Prediction}
 
-\textbf{Network B (improved)} achieves the highest F1 score of
-\textbf{0.9866} with an MCC of 0.9843 and an accuracy of 98.63\%.  Its
-trained weights are exported to \texttt{modelA/trained\_weights.csv}
-and used for generating predictions on the unlabelled test set, saved to
-\texttt{predictions/predictions\_for\_test\_leakyrelu.csv}.
+\texttt{networkB\_improv2} is the best overall model.  It uses Leaky
+ReLU with $\eta=0.05$, $\alpha=0.50$, and $H=12$, and achieves
+98.875\% accuracy, MCC $=0.98714$, and macro F1 $=0.98861$ on the
+validation set.  Within the Tanh family, the selected model is
+\texttt{networkA\_improv2\_fast}, which uses $\eta=0.05$,
+$\alpha=0.90$, and $H=12$; it converges much earlier at epoch~44 while
+still reaching macro F1 $=0.98352$.
 
-\textbf{Network A (improved, fast)} is retained as a backup model (F1
-= 0.9748) with weights stored in \texttt{modelB/trained\_weights.csv}
-and predictions in
-\texttt{predictions/predictions\_for\_test\_tanh.csv}.
+These are also the two models exported, ready for production.  The Tanh
+weights are saved to \texttt{modelA/trained\_weights.csv}, the Leaky
+ReLU weights to \texttt{modelB/trained\_weights.csv}, and their
+respective 701-sample test-set predictions are written to
+\texttt{predictions/predictions\_for\_test\_tanh.csv} and
+\texttt{predictions/predictions\_for\_test\_leakyrelu.csv}.  The
+distinction is important: the Leaky ReLU model is the best by absolute
+validation score, whereas the Tanh model is retained because it gives
+the strongest speed--performance compromise within its activation
+family.
 
 % -----------------------------------------------------------------------
 \section{Analysis and Discussion of Results}
@@ -481,41 +543,70 @@ The single most consequential hyperparameter change was reducing the
 learning rate from $\eta = 0.85$ to $\eta = 0.10$.  At 0.85, the weight
 increments $\Delta w^{(l)}_{ji}$ (Equation~\ref{eq:dw}) were so large
 that the optimiser repeatedly jumped over the minimum of
-$\mathcal{E}$, producing flat error curves and near-zero MCC scores.
+$\mathcal{E}$, producing plateaued or unstable error curves and
+near-zero MCC scores.
 Both the Tanh and Leaky ReLU networks were equally vulnerable to this
 instability, underscoring that activation function choice is secondary to
 choosing an appropriate step size.
 
 \subsection{Role of Momentum}
 
-Reducing $\alpha$ from 0.90 to 0.50 was the second critical adjustment.
-At the higher value, the momentum term dominated Equation~\ref{eq:dw},
-effectively ignoring the current gradient signal entirely.  At 0.50, the
-momentum term provided useful smoothing without overwhelming the
-gradient, yielding faster and more stable descent.
+The notebook results show that momentum only became useful after the
+learning rate had already been reduced to a stable range.  Holding
+$\eta=0.05$ and $H=12$ fixed, increasing $\alpha$ from 0.50 to 0.90
+reduced the convergence epoch for Tanh from 74
+(\texttt{networkA\_improv2}) to 44
+(\texttt{networkA\_improv2\_fast}) and simultaneously improved macro F1
+from 0.97609 to 0.98352.  For Leaky ReLU, the same increase reduced the
+convergence epoch from 73 (\texttt{networkB\_improv2}) to 51
+(\texttt{networkB\_improv2\_fast}), but at a slight cost in macro F1
+(0.98861 down to 0.98530).
+
+Momentum acts like an
+``epoch-skipping'' term: it compresses the loss curve horizontally and
+is best viewed as a convergence-speed control rather than a guaranteed
+way to improve the final optimum.  High momentum was not enough to save
+the default $\eta=0.85$ runs, so it should be tuned only after the step
+size is already well behaved.
 
 \subsection{Hidden Layer Width}
 
-Increasing the hidden layer width from $H = 8$ to $H = 12$ nodes
-improved convergence but at the cost of approximately 4 additional
-seconds of training time per run.  Reducing to $H = 10$ nodes produced
-the \textit{best} result for Network A (F1 = 0.9748 vs.\ 0.9744 for
-$H = 12$) while recovering most of the speed advantage.  This suggests
-that 10 hidden nodes represent a practical sweet spot for this dataset
-and architecture: sufficient capacity to model the eight-class decision
-boundaries without wasteful redundancy.
+The width experiments in the notebook compare $H=12$ against a reduced
+$H=5$ model, not against an intermediate width.  At $\eta=0.05$ and
+$\alpha=0.90$, shrinking the Tanh network from 12 to 5 hidden units
+reduced raw training time from 67.50\,s to 42.36\,s, but also delayed
+convergence from epoch~44 to epoch~74 and lowered macro F1 from 0.98352
+to 0.98108.  The smaller Tanh model therefore remains viable only when
+compute is constrained.
+
+The same reduction was far more damaging for Leaky ReLU.
+\texttt{networkB\_improv2\_small} never achieved the 0.02 MSE target and
+collapsed to macro F1 $=0.55645$, far below the 0.98861 attained by the
+12-node \texttt{networkB\_improv2}.  Hidden-layer width therefore
+interacts strongly with activation choice: $H=12$ is the safer default,
+while $H=5$ is defensible only for the Tanh family and only as a
+hardware-driven compromise.
 
 \subsection{Activation Function Comparison}
 
-Leaky ReLU (Network B improved, F1 = 0.9866) outperformed Tanh
-(Network A improved fast, F1 = 0.9748) by approximately 1.2 percentage
-points in F1 score.  Leaky ReLU's piecewise-linear gradient
-(Equation~\ref{eq:lrelu}) maintains a non-zero slope everywhere,
-including the negative half-axis, which likely prevented gradient
-vanishing in the deeper portions of the error surface.  The Tanh
-function, despite its theoretically favourable symmetry and bounded
-output range~\cite{lecun1998}, may have suffered from saturation effects
-at larger layer widths.
+Leaky ReLU produced the strongest peak validation scores, occupying the
+top two positions in Table~\ref{tab:scores} with
+\texttt{networkB\_improv2} and \texttt{networkB\_improv2\_fast}.  The
+best Tanh model, \texttt{networkA\_improv2\_fast}, ranked third overall
+with macro F1 $=0.98352$, roughly 0.51 percentage points below the best
+Leaky ReLU result.  If the comparison stopped at peak F1, Leaky ReLU
+would be the clear winner.
+
+The learning-curve evidence adds a more nuanced interpretation.  The
+notebook commentary correctly notes that Leaky ReLU exhibited more
+erratic validation behavior than Tanh, and the small-width ReLU variant
+failed completely.  Tanh converged more smoothly, tolerated the reduced
+$H=5$ setting, and delivered a much better efficiency--accuracy tradeoff
+in \texttt{networkA\_improv2\_fast}.  The practical conclusion is
+therefore twofold: Leaky ReLU is the better choice when absolute
+predictive performance is the priority, while Tanh is the more robust
+choice when convergence smoothness and computational efficiency also
+matter.
 
 \subsection{Effect of SMOTE on Class Balance}
 
@@ -531,11 +622,14 @@ optimistic compared to what would be observed on truly unseen data.
 
 \subsection{Convergence Rate and Early Stopping}
 
-Both improved networks showed rapid convergence between epochs 20--40
-and flat curves thereafter, as shown in Figure~\ref{fig:learningcurve}.  Training beyond epoch 40 consumed
-additional compute time without meaningfully improving validation error,
-suggesting that early stopping with a patience of 5--10 epochs would
-yield equivalent performance with roughly half the training cost.
+The fast variants captured most of their usable gains early:
+\texttt{networkA\_improv2\_fast} met the target at epoch~44 and
+\texttt{networkB\_improv2\_fast} at epoch~51.  The highest-F1 models,
+however, required longer runs: \texttt{networkB\_improv2} did not cross
+the threshold until epoch~73, and several Tanh variants also converged
+only after epoch~56.  Early stopping is therefore still sensible, but
+its patience should be tuned per configuration rather than fixed at a
+single aggressive cutoff such as epoch~40.
 
 % -----------------------------------------------------------------------
 \section{Conclusion}
@@ -546,41 +640,46 @@ backpropagation algorithm on an eight-class imbalanced dataset.  The
 following conclusions are drawn:
 
 \begin{enumerate}
-  \item \textbf{Hyperparameter sensitivity is critical.} The default
-        learning rate of 0.85 completely prevented learning in both
-        network architectures.  A reduction to 0.10 was the single most
-        impactful change, transforming near-zero F1 scores into
-        performances above 97\%.
+  \item \textbf{The default configuration was not usable.} The baseline
+        \texttt{networkA} and \texttt{networkB} runs both failed to
+        converge and finished with macro F1 scores of only 0.02925 and
+        0.02503, respectively.  The original $\eta=0.85$ and
+        $\alpha=0.90$ setting was simply too aggressive for this task.
 
-  \item \textbf{Leaky ReLU outperformed Tanh} for this dataset and
-        architecture.  Network B (improved) achieved an F1 of 0.9866
-        versus Network A's best of 0.9748, a difference attributable to
-        Leaky ReLU's non-saturating gradient for negative inputs.
+  \item \textbf{Lowering the learning rate was the main factor that made
+        training succeed.} Once $\eta$ was reduced to 0.10 or 0.05, both
+        activation families produced strong models, and the best overall
+        result came from \texttt{networkB\_improv2} with macro
+        F1 $=0.98861$.
 
-  \item \textbf{Hidden layer width exhibits diminishing returns.}
-        Increasing from 8 to 10 nodes was beneficial; further increasing
-        to 12 offered marginal improvement at additional cost.  Ten nodes
-        proved optimal for this task.
+  \item \textbf{Higher momentum improved convergence speed only after
+        the learning rate had been stabilized.} Raising $\alpha$ from
+        0.50 to 0.90 accelerated both activation families, but its
+        effect was primarily on epochs-to-convergence rather than on the
+        final score.
 
-  \item \textbf{SMOTE effectively neutralised class imbalance,} enabling
+  \item \textbf{A 12-node hidden layer was more reliable than a 5-node
+        hidden layer.} The smaller Tanh network remained acceptable, but
+        the smaller Leaky ReLU network failed badly.  Hidden-layer width
+        should therefore be treated as a capacity constraint, not just a
+        speed knob.
+
+  \item \textbf{Leaky ReLU delivered the best peak accuracy, while Tanh
+        provided the smoother efficiency--accuracy tradeoff.}
+        \texttt{networkB\_improv2} is the best model when prediction
+        quality is the sole criterion, whereas
+        \texttt{networkA\_improv2\_fast} is the strongest Tanh choice
+        when faster convergence is also valued.
+
+  \item \textbf{SMOTE effectively neutralized class imbalance,} enabling
         all eight classes to contribute proportionally to the gradient
-        signal.  Future work should apply SMOTE exclusively to the
-        training fold, after the train/validation split, to eliminate
-        data leakage.
-
-  \item \textbf{Momentum should complement, not dominate.} At
-        $\alpha = 0.90$ the momentum term overwhelmed the gradient;
-        $\alpha = 0.50$ provided the right balance between acceleration
-        and responsiveness to the current loss landscape.
-
-  \item \textbf{Early stopping is recommended.} Learning curves
-        flattened by epoch 40, indicating that 100-epoch budgets are
-        wasteful.  A patience-based stopping criterion could halve
-        training time without sacrificing predictive performance.
+        signal.  Future work should apply SMOTE only to the training
+        fold, after the train/validation split, to remove leakage from
+        the validation set.
 \end{enumerate}
 
 % -----------------------------------------------------------------------
-\section{References}
+% \section{References}
 % -----------------------------------------------------------------------
 
 \begin{thebibliography}{9}
