@@ -210,5 +210,5 @@ def generateTimeAdjustedTable(data):
 
 if __name__ == '__main__':
     exportdir = 'export'
-    outputfile = 'combined_scores.csv'
+    outputfile = 'final/combined_scores.csv'
     combineScores(exportdir, outputfile)
