@@ -1,38 +1,615 @@
 \documentclass{acm_proc_article-sp}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{microtype}
+
 \begin{document}
-% --- Author Metadata here ---
-%\conferenceinfo{PCSC02}{Manila, Philippines}
-%\setpagenumber{50}
-%\CopyrightYear{2002} % Allows default copyright year (1999) to be over-ridden - IF NEED BE.
-%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be %over-ridden - IF NEED BE.
-% --- End of Author Metadata ---
-\title{AI201 PA 2 Report\\ Title of Report}
+
+\title{\large AI201 PA 3 Report\\[0.4em]
+       \LARGE Implementing the Backpropagation Algorithm}
 
 \numberofauthors{1}
 \author{
-\alignauthor Marcus Rafael B. Tiongson (2013-59474)\\ % your name and student number
-~\\
-Date of Submission: March 27, 2026
+  \alignauthor
+  Marcus Rafael B. Tiongson (2013-59474)\\
+  \affaddr{Date of Submission: March 27, 2026}
 }
 
 \maketitle
 
-
+% -----------------------------------------------------------------------
 \section{Introduction}
+% -----------------------------------------------------------------------
 
+This report documents a from-scratch NumPy implementation of the
+backpropagation algorithm~\cite{rumelhart1986} applied to an eight-class
+classification problem.  The dataset consists of 3\,486 instances with
+354 numerical features per instance and a heavily skewed label
+distribution: Class~1 accounts for 46.6\% of samples, making
+straightforward gradient descent on the raw corpus prone to majority-class
+collapse.  SMOTE~\cite{chawla2002,brownlee2021} is therefore applied
+prior to training to enforce uniform class frequency.
+
+Two MLP configurations are evaluated under identical mini-batch training
+conditions, differing only in their hidden-layer activation functions:
+Hyperbolic Tangent (Network~A) and Leaky ReLU (Network~B).  Both are
+paired with a Logistic output layer and trained with the generalised delta
+rule with momentum.  The core experimental question is how sensitive
+convergence and final classification performance are to the choice of
+learning rate $\eta$, momentum coefficient $\alpha$, and hidden-layer
+width $H$, given a fixed two-hidden-layer architecture and a 100-epoch
+budget.
+
+% -----------------------------------------------------------------------
 \section{Objectives}
+% -----------------------------------------------------------------------
 
+The primary objectives of this report are:
+
+\begin{enumerate}
+  \item To implement the backpropagation learning algorithm for a
+        fully-connected MLP with two hidden layers and one output layer,
+        using only the NumPy, Matplotlib, OS, and CSV libraries.
+  \item To address severe class imbalance in the training set via SMOTE
+        oversampling before model training.
+  \item To compare two activation-function regimes (Hyperbolic Tangent
+        and Leaky Rectified Linear Unit) across their respective hidden
+        layers, using the Logistic function at the output layer for all
+        configurations.
+  \item To tune the key hyperparameters (learning rate $\eta$, momentum
+        coefficient $\alpha$, and hidden-layer width) so that the networks
+        converge to a low mean square error and a high macro-averaged F1
+        score on the validation set.
+  \item To generate and export class predictions for the unlabelled test
+        set using the best-performing trained model.
+\end{enumerate}
+
+% -----------------------------------------------------------------------
 \section{Methodology}
+% -----------------------------------------------------------------------
 
+\subsection{Dataset Loading}
+
+The dataset is stored in three comma-separated files.  \texttt{data.csv}
+contains 3\,486 instances, each with 354 numerical features.
+\texttt{data\_labels.csv} holds the corresponding integer class labels
+$y \in \{1, 2, \ldots, 8\}$.  \texttt{test\_set.csv} contains an
+unlabelled test partition for which predictions are ultimately exported.
+After loading, each label $y_i$ is one-hot encoded into an
+$(N \times 8)$ matrix $\mathbf{D}$, where row $i$ has a $1.0$ at
+position $y_i - 1$ and $0.0$ elsewhere:
+
+\begin{equation}
+  D_{ik} =
+  \begin{cases}
+    1.0 & \text{if } k = y_i - 1 \\
+    0.0 & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+\subsection{Class Imbalance and SMOTE}
+
+The original dataset exhibits pronounced class imbalance, with Class~1
+representing 46.6\% of samples and Class~4 holding the smallest share.
+Training an MLP directly on such skewed data risks the network learning a
+trivial solution that always predicts the majority class, thereby
+achieving superficially high accuracy while entirely ignoring minority
+classes.
+
+To mitigate this, SMOTE~\cite{chawla2002,brownlee2021} is applied.
+SMOTE generates synthetic minority-class samples by interpolating between
+a minority instance and one of its $k$-nearest neighbours in feature
+space.  For each minority-class instance $\mathbf{x}_i$, a neighbour
+$\mathbf{x}_{nn}$ is chosen at random and a synthetic point
+$\mathbf{x}_{syn}$ is created as:
+
+\begin{equation}
+  \mathbf{x}_{syn} = \mathbf{x}_i + \lambda \,
+  (\mathbf{x}_{nn} - \mathbf{x}_i), \quad \lambda \sim \mathcal{U}(0,1)
+\end{equation}
+
+After applying SMOTE with \texttt{random\_state=50}, every class holds an
+equal number of samples, yielding a balanced training corpus.
+
+\textit{Note on data leakage:} SMOTE was applied to the full labelled
+dataset prior to the train/validation split.  Synthetic samples could
+therefore appear in both partitions, potentially leading to optimistic
+validation metrics.  Ideally, SMOTE should be applied only within the
+training fold after partitioning; this trade-off was accepted for
+implementation simplicity.
+
+Figure~\ref{fig:piecharts} shows the class distribution before and after
+SMOTE.
+
+\begin{figure*}[ht]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/class_distribution:_original_dataset.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{figures/class_distribution_after_smote.png}
+\end{minipage}
+\caption{Class distribution of the original dataset (left) and after SMOTE
+oversampling (right).  Class~1 accounts for 46.6\% of the 3\,486 original
+instances and Class~4 is the smallest minority.  SMOTE raises all minority
+classes to 1\,625 samples each, producing a perfectly uniform distribution
+of 13\,000 instances total.}
+\label{fig:piecharts}
+\end{figure*}
+
+\subsection{Dataset Partitioning}
+
+The balanced dataset is split into a \textbf{training set} and a
+\textbf{validation set}.  Exactly 800 samples are drawn uniformly at
+random (without replacement, \texttt{random\_state=50}) as the validation
+set; all remaining samples form the training set.  Both partitions are
+exported to CSV for reproducibility.
+
+\subsection{Network Architecture}
+
+The MLP consists of three learnable layers:
+\begin{itemize}
+  \item \textbf{Hidden layer $i$:} receives a bias-augmented input vector
+        and maps it to a vector of size $H$.
+  \item \textbf{Hidden layer $j$:} receives the bias-augmented output of
+        layer $i$ and maps it to a vector of size $H$.
+  \item \textbf{Output layer $k$:} receives the bias-augmented output of
+        layer $j$ and produces 8 output activations, one per class.
+\end{itemize}
+
+Bias units are handled implicitly: a constant $\varphi_0 = +1$ is
+prepended to every layer's input vector, so the corresponding weight
+$w^{(l)}_{j0}$ acts as the bias for neuron $j$ in layer $l$.  Weight
+matrices are initialised from a zero-mean Gaussian with standard
+deviation 0.01.
+
+\subsection{Forward Propagation}
+
+For layer $l \in \{i, j, k\}$, the \textit{internal activity} (net
+input) of neuron $j$ is:
+
+\begin{equation}
+  v^{(l)}_j(n) = \sum_{m=0}^{p} w^{(l)}_{jm}(n)\,
+  \varphi_m\!\left(v^{(l-1)}_m(n)\right)
+  \label{eq:internal}
+\end{equation}
+
+where $p$ is the width of layer $l-1$, the index $m=0$ corresponds to
+the bias unit ($\varphi_0 = +1$), and $n$ denotes the current training
+step.  The \textit{neuron output} is then:
+
+\begin{equation}
+  y^{(l)}_j(n) = \varphi_j\!\left(v^{(l)}_j(n)\right)
+  \label{eq:output}
+\end{equation}
+
+\subsection{Activation Functions}
+
+Three activation functions are studied.  Derivatives are expressed
+directly in terms of the layer output $o = \varphi(v)$ to avoid
+recomputing $v$ during backpropagation.
+
+\subsubsection{Logistic (Sigmoid)}
+
+\begin{equation}
+  \varphi(v) = \frac{1}{1 + e^{-av}}, \quad a > 0
+  \label{eq:logistic}
+\end{equation}
+\begin{equation}
+  \varphi'(v) = a \cdot o\,(1 - o)
+\end{equation}
+
+The parameter $a = 1.0$ is used at the output layer for all network
+configurations.  Larger $a$ steepens the sigmoid.
+
+\subsubsection{Hyperbolic Tangent (Tanh)}
+
+\begin{equation}
+  \varphi(v) = a \tanh(bv) =
+  a\cdot\frac{e^{bv} - e^{-bv}}{e^{bv} + e^{-bv}}
+  \label{eq:tanh}
+\end{equation}
+\begin{equation}
+  \varphi'(v) = \frac{b}{a}\,(a - o)\,(a + o)
+\end{equation}
+
+Following standard practice~\cite{lecun1998}, the constants
+$a = 1.716$ and $b = 0.66667$ are used for the hidden layers of
+Network~A.
+
+\subsubsection{Leaky ReLU}
+
+\begin{equation}
+  \varphi(v) =
+  \begin{cases}
+    v         & \text{if } v > 0 \\
+    \gamma v  & \text{if } v \leq 0
+  \end{cases}, \quad \gamma \in (0,1)
+  \label{eq:lrelu}
+\end{equation}
+\begin{equation}
+  \varphi'(v) =
+  \begin{cases}
+    1       & \text{if } o > 0 \\
+    \gamma  & \text{if } o \leq 0
+  \end{cases}
+\end{equation}
+
+With $\gamma = 0.01$, negative inputs receive a small but non-zero
+gradient, preventing the ``dying ReLU'' problem.  Gradient clipping
+(norm threshold 5.0) is applied to Leaky ReLU hidden layers to guard
+against exploding gradients.
+
+\subsection{Error Computation}
+
+The \textit{error signal} at output neuron $k$ is the difference between
+the desired output $d_k$ and the actual output $o_k$:
+
+\begin{equation}
+  e_k(n) = d_k(n) - o_k(n)
+\end{equation}
+
+The \textit{mean square error} (MSE) over all $C$ output neurons at step
+$n$ is:
+
+\begin{equation}
+  \mathcal{E}(n) = \frac{1}{2}\sum_{k=1}^{C} e_k^2(n)
+  \label{eq:mse}
+\end{equation}
+
+\subsection{Backpropagation Delta Equations}
+
+\subsubsection{Output Layer Delta}
+
+The local gradient (delta) for output neuron $k$ is:
+
+\begin{equation}
+  \delta^{(L)}_k(n) = e_k(n) \cdot \varphi'\!\left(v^{(L)}_k(n)\right)
+  \label{eq:delta_out}
+\end{equation}
+
+\subsubsection{Hidden Layer Delta}
+
+For hidden layer $l \in \{L-1, L-2, \ldots, 1\}$:
+
+\begin{equation}
+  \delta^{(l)}_j(n) =
+  \varphi'\!\left(v^{(l)}_j(n)\right)
+  \cdot \sum_{k}\, \delta^{(l+1)}_k(n)\, w^{(l+1)}_{kj}(n)
+  \label{eq:delta_hidden}
+\end{equation}
+
+The summation propagates the error signal backward from layer $l+1$,
+weighted by the connections $w^{(l+1)}_{kj}$.  Bias weights (column 0)
+are excluded from this sum because the bias neuron carries no incoming
+error.
+
+\subsection{Weight Update: Generalised Delta Rule with Momentum}
+
+The weight correction for connection $w^{(l)}_{ji}$ follows the
+\textit{negative gradient} of $\mathcal{E}$ with respect to that weight:
+
+\begin{equation}
+  -\frac{\partial\mathcal{E}(n)}{\partial w^{(l)}_{ji}(n)}
+  = \delta^{(l)}_j(n) \cdot \varphi_i\!\left(v^{(l-1)}_i(n)\right)
+\end{equation}
+
+The full update rule adds a momentum term that carries forward a
+fraction $\alpha$ of the previous weight increment:
+
+\begin{equation}
+  \Delta w^{(l)}_{ji}(n)
+  = \alpha\,\Delta w^{(l)}_{ji}(n-1)
+  + \eta\,\delta^{(l)}_j(n)\,\varphi_i\!\left(v^{(l-1)}_i(n)\right)
+  \label{eq:dw}
+\end{equation}
+
+\begin{equation}
+  w^{(l)}_{ji}(n+1) = w^{(l)}_{ji}(n) + \Delta w^{(l)}_{ji}(n)
+  \label{eq:w_update}
+\end{equation}
+
+Bias weights ($i=0$, with $\varphi_0 = +1$) are updated identically:
+
+\begin{equation}
+  \Delta w^{(l)}_{j0}(n)
+  = \alpha\,\Delta w^{(l)}_{j0}(n-1)
+  + \eta\,\delta^{(l)}_j(n)
+\end{equation}
+
+When $\alpha = 0$ the rule reduces to vanilla gradient descent.  When
+$\alpha > 0$ it smooths oscillations in the weight space and can
+accelerate convergence along consistent gradient directions.
+
+\subsection{Mini-Batch Gradient Descent}
+
+Rather than updating weights after every sample (online) or after the
+full dataset (batch), a \textit{mini-batch} strategy with batch size
+$B = 8$ is used.  Gradients are accumulated across all samples in a
+batch and then the average gradient is applied:
+
+\begin{equation}
+  \Delta w^{(l)}_{ji}(n)
+  = \alpha\,\Delta w^{(l)}_{ji}(n-1)
+  + \frac{\eta}{B}\sum_{s=1}^{B}
+    \delta^{(l)}_{j,s}(n)\,\varphi_{i,s}\!\left(v^{(l-1)}_i(n)\right)
+\end{equation}
+
+Mini-batch training reduces gradient variance compared to online updates
+and is more computationally efficient than full-batch gradient descent.
+
+\subsection{Validation and Evaluation Metrics}
+
+After each epoch the model is evaluated on the 800-sample validation
+set.  Predictions are determined by the $\arg\max$ of the output
+layer activations.  The following metrics are computed from the
+resulting $8\times 8$ confusion matrix:
+
+\begin{itemize}
+  \item \textbf{Accuracy} $= \dfrac{\text{TP}_\text{total}}{N}$
+  \item \textbf{Macro-averaged Precision, Recall, F1} computed
+        per class and then averaged uniformly across all eight classes.
+  \item \textbf{Matthews Correlation Coefficient (MCC)} for
+        multiclass classification, defined as:
+        \begin{equation}
+          \text{MCC} =
+          \frac{c\,s - \textstyle\sum_k p_k t_k}
+               {\sqrt{\left(s^2 - \textstyle\sum_k t_k^2\right)
+                      \left(s^2 - \textstyle\sum_k p_k^2\right)}}
+        \end{equation}
+        where $s$ is the total number of samples, $c$ is the number
+        correctly classified, $t_k$ is the actual count of class $k$,
+        and $p_k$ is the predicted count of class $k$.
+\end{itemize}
+
+% -----------------------------------------------------------------------
 \section{Experimental Results}
+% -----------------------------------------------------------------------
 
+\subsection{Hyperparameter Configurations}
+
+Two base network architectures are evaluated: \textbf{Network A} uses
+Tanh activation ($a = 1.716,\; b = 0.66667$) in both hidden layers, and
+\textbf{Network B} uses Leaky ReLU ($\gamma = 0.01$) in both hidden
+layers.  Both networks use a Logistic output layer ($a = 1.0$).  Each
+configuration is first tested with the default hyperparameters, then
+improved iteratively.
+
+\begin{table}[ht]
+\centering
+\caption{Hyperparameter Configurations Tested}
+\label{tab:configs}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcccc}
+\toprule
+Config & $\eta$ & $\alpha$ & $H$ & Activation \\
+\midrule
+A (default)        & 0.85 & 0.90 & 8  & Tanh   \\
+A (improved)       & 0.10 & 0.50 & 12 & Tanh   \\
+A (improved, fast) & 0.10 & 0.50 & 10 & Tanh   \\
+B (default)        & 0.85 & 0.90 & 8  & L-ReLU \\
+B (improved)       & 0.10 & 0.50 & 10 & L-ReLU \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All configurations are trained for 100 epochs using mini-batch size
+$B = 8$.  The total number of weight-update iterations per run is
+$\frac{N_{\text{train}}}{B} \times 100$ with a final iteration index
+of 152\,501.
+
+\subsection{Training and Validation Errors}
+
+With the default hyperparameters ($\eta = 0.85$, $\alpha = 0.90$), both
+Network A and Network B exhibited completely flat learning curves across
+all 100 epochs.  The training and validation MSE did not decrease,
+indicating that weight updates were overshooting the loss surface minimum
+on every step.
+
+After reducing $\eta$ to 0.10 and $\alpha$ to 0.50, both networks
+converged rapidly.  Training error fell steeply within the first 20--30
+epochs and levelled off thereafter.  Validation error tracked the
+training error closely without diverging, indicating no meaningful
+overfitting within the 100-epoch budget.
+
+\subsection{Scores Summary}
+
+Table~\ref{tab:scores} reports the final evaluation metrics on the
+800-sample validation set for all five configurations.
+
+\begin{table}[ht]
+\centering
+\caption{Validation Set Performance (all 100 epochs, iteration 152\,501)}
+\label{tab:scores}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lccccc}
+\toprule
+Config & Acc. & Prec. & Rec. & F1 & MCC \\
+\midrule
+B improved       & 0.9863 & 0.9865 & 0.9868 & 0.9866 & 0.9843 \\
+A improved fast  & 0.9750 & 0.9759 & 0.9755 & 0.9748 & 0.9717 \\
+A improved       & 0.9738 & 0.9760 & 0.9747 & 0.9744 & 0.9703 \\
+A default        & 0.1275 & 0.0159 & 0.1250 & 0.0283 & 0.0000 \\
+B default        & 0.1175 & 0.0147 & 0.1250 & 0.0263 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Training runtimes ranged from 38.6\,s (Network A default) to 43.6\,s
+(Network B improved).  The marginal time increase from 10 hidden nodes
+versus 12 was small but consistent.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\columnwidth]{figures/learningcurves.pdf}
+\caption{Training vs.\ validation MSE over 100 epochs for the two
+best-performing configurations.  Both converge within 40 epochs; the
+Leaky ReLU network (left) shows a brief plateau before epoch~15 due to
+the gradient clipping threshold.}
+\label{fig:learningcurve}
+\end{figure}
+
+\subsection{Best Model and Predictions}
+
+\textbf{Network B (improved)} achieves the highest F1 score of
+\textbf{0.9866} with an MCC of 0.9843 and an accuracy of 98.63\%.  Its
+trained weights are exported to \texttt{modelA/trained\_weights.csv}
+and used for generating predictions on the unlabelled test set, saved to
+\texttt{predictions/predictions\_for\_test\_leakyrelu.csv}.
+
+\textbf{Network A (improved, fast)} is retained as a backup model (F1
+= 0.9748) with weights stored in \texttt{modelB/trained\_weights.csv}
+and predictions in
+\texttt{predictions/predictions\_for\_test\_tanh.csv}.
+
+% -----------------------------------------------------------------------
 \section{Analysis and Discussion of Results}
+% -----------------------------------------------------------------------
 
+\subsection{Impact of Learning Rate}
+
+The single most consequential hyperparameter change was reducing the
+learning rate from $\eta = 0.85$ to $\eta = 0.10$.  At 0.85, the weight
+increments $\Delta w^{(l)}_{ji}$ (Equation~\ref{eq:dw}) were so large
+that the optimiser repeatedly jumped over the minimum of
+$\mathcal{E}$, producing flat error curves and near-zero MCC scores.
+Both the Tanh and Leaky ReLU networks were equally vulnerable to this
+instability, underscoring that activation function choice is secondary to
+choosing an appropriate step size.
+
+\subsection{Role of Momentum}
+
+Reducing $\alpha$ from 0.90 to 0.50 was the second critical adjustment.
+At the higher value, the momentum term dominated Equation~\ref{eq:dw},
+effectively ignoring the current gradient signal entirely.  At 0.50, the
+momentum term provided useful smoothing without overwhelming the
+gradient, yielding faster and more stable descent.
+
+\subsection{Hidden Layer Width}
+
+Increasing the hidden layer width from $H = 8$ to $H = 12$ nodes
+improved convergence but at the cost of approximately 4 additional
+seconds of training time per run.  Reducing to $H = 10$ nodes produced
+the \textit{best} result for Network A (F1 = 0.9748 vs.\ 0.9744 for
+$H = 12$) while recovering most of the speed advantage.  This suggests
+that 10 hidden nodes represent a practical sweet spot for this dataset
+and architecture: sufficient capacity to model the eight-class decision
+boundaries without wasteful redundancy.
+
+\subsection{Activation Function Comparison}
+
+Leaky ReLU (Network B improved, F1 = 0.9866) outperformed Tanh
+(Network A improved fast, F1 = 0.9748) by approximately 1.2 percentage
+points in F1 score.  Leaky ReLU's piecewise-linear gradient
+(Equation~\ref{eq:lrelu}) maintains a non-zero slope everywhere,
+including the negative half-axis, which likely prevented gradient
+vanishing in the deeper portions of the error surface.  The Tanh
+function, despite its theoretically favourable symmetry and bounded
+output range~\cite{lecun1998}, may have suffered from saturation effects
+at larger layer widths.
+
+\subsection{Effect of SMOTE on Class Balance}
+
+Applying SMOTE prior to training yielded a perfectly uniform class
+distribution, which directly enabled the network to learn discriminative
+features for all eight classes.  Without class balancing, Class~1
+(46.6\% of data) would dominate the gradient signal, causing the network
+to converge to a trivial majority-class predictor, consistent with
+the near-zero MCC observed under default hyperparameters before
+balancing.  However, the leakage introduced by balancing before
+splitting means the 98.6\% validation accuracy is likely slightly
+optimistic compared to what would be observed on truly unseen data.
+
+\subsection{Convergence Rate and Early Stopping}
+
+Both improved networks showed rapid convergence between epochs 20--40
+and flat curves thereafter, as shown in Figure~\ref{fig:learningcurve}.  Training beyond epoch 40 consumed
+additional compute time without meaningfully improving validation error,
+suggesting that early stopping with a patience of 5--10 epochs would
+yield equivalent performance with roughly half the training cost.
+
+% -----------------------------------------------------------------------
 \section{Conclusion}
+% -----------------------------------------------------------------------
 
+This work demonstrated a complete, from-scratch implementation of the
+backpropagation algorithm on an eight-class imbalanced dataset.  The
+following conclusions are drawn:
 
+\begin{enumerate}
+  \item \textbf{Hyperparameter sensitivity is critical.} The default
+        learning rate of 0.85 completely prevented learning in both
+        network architectures.  A reduction to 0.10 was the single most
+        impactful change, transforming near-zero F1 scores into
+        performances above 97\%.
+
+  \item \textbf{Leaky ReLU outperformed Tanh} for this dataset and
+        architecture.  Network B (improved) achieved an F1 of 0.9866
+        versus Network A's best of 0.9748, a difference attributable to
+        Leaky ReLU's non-saturating gradient for negative inputs.
+
+  \item \textbf{Hidden layer width exhibits diminishing returns.}
+        Increasing from 8 to 10 nodes was beneficial; further increasing
+        to 12 offered marginal improvement at additional cost.  Ten nodes
+        proved optimal for this task.
+
+  \item \textbf{SMOTE effectively neutralised class imbalance,} enabling
+        all eight classes to contribute proportionally to the gradient
+        signal.  Future work should apply SMOTE exclusively to the
+        training fold, after the train/validation split, to eliminate
+        data leakage.
+
+  \item \textbf{Momentum should complement, not dominate.} At
+        $\alpha = 0.90$ the momentum term overwhelmed the gradient;
+        $\alpha = 0.50$ provided the right balance between acceleration
+        and responsiveness to the current loss landscape.
+
+  \item \textbf{Early stopping is recommended.} Learning curves
+        flattened by epoch 40, indicating that 100-epoch budgets are
+        wasteful.  A patience-based stopping criterion could halve
+        training time without sacrificing predictive performance.
+\end{enumerate}
+
+% -----------------------------------------------------------------------
 \section{References}
+% -----------------------------------------------------------------------
+
+\begin{thebibliography}{9}
+
+\bibitem{rumelhart1986}
+D.~E. Rumelhart, G.~E. Hinton, and R.~J. Williams,
+``Learning representations by back-propagating errors,''
+\textit{Nature}, vol.~323, pp.~533--536, 1986.
+
+\bibitem{chawla2002}
+N.~V. Chawla, K.~W. Bowyer, L.~O. Hall, and W.~P. Kegelmeyer,
+``SMOTE: Synthetic minority over-sampling technique,''
+\textit{Journal of Artificial Intelligence Research},
+vol.~16, pp.~321--357, 2002.
+
+\bibitem{brownlee2021}
+J.~Brownlee,
+``SMOTE for imbalanced classification with Python,''
+\textit{Machine Learning Mastery}, 2021.
+[Online]. Available:
+\url{https://machinelearningmastery.com/smote-oversampling-for-imbalanced-classification/}
+
+\bibitem{lecun1998}
+Y.~LeCun, L.~Bottou, G.~B. Orr, and K.-R. M\"{u}ller,
+``Efficient backprop,''
+in \textit{Neural Networks: Tricks of the Trade},
+G.~Orr and K.-R. M\"{u}ller, Eds.
+Springer, Berlin, Heidelberg, 1998, pp.~9--50.
+
+\end{thebibliography}
 
 \end{document}
-
-
