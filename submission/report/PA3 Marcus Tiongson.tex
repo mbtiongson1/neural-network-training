@@ -20,21 +20,19 @@
 
 \begin{document}
 
-\title{\large AI201 PA 3 Report\\[0.4em]
-       \LARGE Implementing the Backpropagation Algorithm}
+\title{AI201 PA 3 Report\\Implementing the Backpropagation Algorithm}
 
 \numberofauthors{1}
 \author{
-  \alignauthor
-  Marcus Rafael B. Tiongson (2013-59474)\\
-  \affaddr{Date of Submission: March 27, 2026}
+\alignauthor Marcus Rafael B. Tiongson (2013-59474)\\ % your name and student number
+~\\
+Date of Submission: March 27, 2026
 }
 
 \maketitle
 
-% -----------------------------------------------------------------------
 \section{Introduction}
-% -----------------------------------------------------------------------
+
 
 This report documents a from-scratch NumPy implementation of the
 backpropagation algorithm~\cite{rumelhart1986} applied to an eight-class
@@ -55,9 +53,7 @@ learning rate $\eta$, momentum coefficient $\alpha$, and hidden-layer
 width $H$, given a fixed two-hidden-layer architecture and a 100-epoch
 budget.
 
-% -----------------------------------------------------------------------
 \section{Objectives}
-% -----------------------------------------------------------------------
 
 The primary objectives of this report are:
 
@@ -79,9 +75,7 @@ The primary objectives of this report are:
         set using the best-performing trained model.
 \end{enumerate}
 
-% -----------------------------------------------------------------------
 \section{Methodology}
-% -----------------------------------------------------------------------
 
 \subsection{Dataset Loading}
 
@@ -380,9 +374,7 @@ resulting $8\times 8$ confusion matrix:
         and $p_k$ is the predicted count of class $k$.
 \end{itemize}
 
-% -----------------------------------------------------------------------
 \section{Experimental Results}
-% -----------------------------------------------------------------------
 
 \subsection{Hyperparameter Configurations}
 
@@ -539,9 +531,7 @@ validation score, whereas the Tanh model is retained because it gives
 the strongest speed--performance compromise within its activation
 family.
 
-% -----------------------------------------------------------------------
 \section{Analysis and Discussion of Results}
-% -----------------------------------------------------------------------
 
 \subsection{Impact of Learning Rate}
 
@@ -640,9 +630,7 @@ only after epoch~56.  Early stopping is therefore still sensible, but
 its patience should be tuned per configuration rather than fixed at a
 single aggressive cutoff such as epoch~40.
 
-% -----------------------------------------------------------------------
 \section{Conclusion}
-% -----------------------------------------------------------------------
 
 This work demonstrated a complete, from-scratch implementation of the
 backpropagation algorithm on an eight-class imbalanced dataset.  The
@@ -687,9 +675,53 @@ following conclusions are drawn:
         the validation set.
 \end{enumerate}
 
-% -----------------------------------------------------------------------
+Based on these results, the following recommendations are proposed:
+
+\begin{enumerate}
+  \item Use \texttt{networkB\_improv2} as the primary model when the
+        objective is maximum validation performance, since it achieved
+        the highest macro F1 score among all tested configurations.
+
+  \item Prefer a reduced learning rate in the range
+        $\eta \in \{0.10, 0.05\}$ for future tuning, because the
+        experiments showed that stable convergence depended far more on
+        this choice than on any other hyperparameter.
+
+  \item Retain higher momentum only after a stable learning rate has
+        been selected.  In this study, $\alpha=0.90$ was useful for
+        faster convergence, but it was not sufficient to rescue an
+        unstable training setup on its own.
+
+  \item Avoid undersized hidden layers when working with this dataset.
+        A width of 12 hidden units was consistently more dependable than
+        5 units, especially for the Leaky ReLU network.
+
+  \item Revise the experimental pipeline so that SMOTE is applied only
+        after the train/validation split.  This would produce a more
+        reliable estimate of generalization performance and remove
+        leakage from model evaluation.
+
+  \item Evaluate the implementation on computing environments with fewer
+        hardware limitations than personal laptops, such as laboratory
+        workstations or shared high-performance systems.  This would
+        allow broader hyperparameter searches, longer runs, and more
+        consistent timing measurements without being constrained by
+        local memory and processing limits.
+
+  \item Conduct an epoch-driven follow-up study that explicitly compares
+        how quickly different configurations converge across a wider
+        range of setups.  Instead of reporting only the final validation
+        score, future experiments should record the epoch at which each
+        model reaches predefined performance thresholds, making it
+        possible to rank networks not only by accuracy but also by
+        convergence speed.
+
+  \item Extend the study with multiple random splits or cross-validation
+        to confirm whether the observed advantage of Leaky ReLU over
+        Tanh remains consistent beyond a single partition of the data.
+\end{enumerate}
+
 % \section{References}
-% -----------------------------------------------------------------------
 
 \begin{thebibliography}{9}
 
