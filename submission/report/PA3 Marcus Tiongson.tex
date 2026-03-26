@@ -135,7 +135,7 @@ SMOTE.
 \centering
 \begin{minipage}{0.48\textwidth}
   \centering
-  \includegraphics[width=\textwidth]{class_distribution:_original_dataset.png}
+  \includegraphics[width=\textwidth]{class_distribution_original_dataset.png}
 \end{minipage}
 \hfill
 \begin{minipage}{0.48\textwidth}
@@ -677,6 +677,168 @@ following conclusions are drawn:
         fold, after the train/validation split, to remove leakage from
         the validation set.
 \end{enumerate}
+
+\clearpage
+\appendix
+\section{Additional Figures}
+
+The following figures were generated during preprocessing and model
+tuning but were not included in the main narrative because the paired
+summary plots already captured the key comparisons.  They are included
+here to preserve the complete visual record of the experiments.
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.31\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{class_distribution:_original_dataset.png}\\[0.25em]
+  \small Alternate original-dataset export
+\end{minipage}
+\hfill
+\begin{minipage}{0.31\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{class_distribution_of_training_set.png}\\[0.25em]
+  \small Training split
+\end{minipage}
+\hfill
+\begin{minipage}{0.31\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{class_distribution_of_validation_set.png}\\[0.25em]
+  \small Validation split
+\end{minipage}
+\caption{Supplementary class-distribution snapshots.  The left panel is
+an alternate export of the original dataset distribution, while the
+centre and right panels show the class frequencies in the post-SMOTE
+training and validation partitions.  These views complement
+Figure~\ref{fig:piecharts} by showing that, after balancing, both splits
+remain close to uniform; the later performance differences are therefore
+better explained by hyperparameter choices than by residual class skew.}
+\label{fig:appendix-class-balance}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_a.png}\\[0.25em]
+  \small \texttt{networkA}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_a_improved.png}\\[0.25em]
+  \small \texttt{networkA\_improv}
+\end{minipage}
+\caption{Individual learning curves for the baseline Tanh model and its
+first stable variant.  This pair isolates the effect of moving from the
+aggressive default setting to the first workable configuration:
+\texttt{networkA} never enters a useful learning regime, while
+\texttt{networkA\_improv} provides the first smooth descent that leads
+to the high-F1 cluster reported in Table~\ref{tab:scores}.}
+\label{fig:appendix-network-a-early}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2.png}\\[0.25em]
+  \small \texttt{networkA\_improv2}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2_(fast).png}\\[0.25em]
+  \small \texttt{networkA\_improv2\_fast}
+\end{minipage}
+\caption{Individual learning curves for the two strongest 12-node Tanh
+models.  Holding the hidden width fixed at $H=12$, the lower learning
+rate keeps the loss trajectory well behaved, while the higher-momentum
+``fast'' variant mainly compresses the curve horizontally and reaches
+the stopping criterion earlier.  This agrees with the discussion that
+momentum improved convergence speed more than it changed the final
+optimum.}
+\label{fig:appendix-network-a-best}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.62\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_a_improved_2_(small).png}\\[0.25em]
+  \small \texttt{networkA\_improv2\_small}
+\end{minipage}
+\caption{Learning curve for the reduced-width Tanh network.  This figure
+supports the claim that the $H=5$ Tanh model is still viable, but only
+as a compute-saving compromise: it converges later and slightly below
+the 12-node fast variant, matching its weaker efficiency--accuracy
+tradeoff in Table~\ref{tab:scores}.}
+\label{fig:appendix-network-a-small}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_b.png}\\[0.25em]
+  \small \texttt{networkB}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_b_improved.png}\\[0.25em]
+  \small \texttt{networkB\_improv}
+\end{minipage}
+\caption{Individual learning curves for the baseline Leaky ReLU model
+and its first stable variant.  As with the Tanh family, lowering the
+learning rate is the change that rescues training; the default
+\texttt{networkB} run remains unstable, whereas
+\texttt{networkB\_improv} moves into the high-performing regime even
+though its validation trajectory is still less smooth than the
+comparable Tanh runs.}
+\label{fig:appendix-network-b-early}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2.png}\\[0.25em]
+  \small \texttt{networkB\_improv2}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2_(fast).png}\\[0.25em]
+  \small \texttt{networkB\_improv2\_fast}
+\end{minipage}
+\caption{Individual learning curves for the two best 12-node Leaky ReLU
+models.  These plots complement Figure~\ref{fig:learningcurve} by
+showing the main tradeoff within the ReLU family: \texttt{networkB\_improv2}
+achieves the strongest final F1, while \texttt{networkB\_improv2\_fast}
+reaches a good solution materially earlier at a small cost in the final
+score.}
+\label{fig:appendix-network-b-best}
+\end{figure*}
+
+\begin{figure*}[p]
+\centering
+\begin{minipage}{0.62\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{learning_curve_network_b_improved_2_(small).png}\\[0.25em]
+  \small \texttt{networkB\_improv2\_small}
+\end{minipage}
+\caption{Learning curve for the reduced-width Leaky ReLU network.  This
+is the clearest failure case among the tuned configurations: shrinking
+the hidden layers to $H=5$ makes optimisation unstable enough that the
+model never satisfies the convergence target and its macro F1 collapses
+to 0.55645.  The figure therefore reinforces the report's conclusion
+that hidden-layer width interacts much more strongly with Leaky ReLU
+than with Tanh.}
+\label{fig:appendix-network-b-small}
+\end{figure*}
+
+\clearpage
 
 % -----------------------------------------------------------------------
 % \section{References}

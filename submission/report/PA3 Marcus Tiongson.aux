@@ -1,0 +1,63 @@
+\relax 
+\citation{rumelhart1986}
+\citation{chawla2002}
+\citation{brownlee2021}
+\citation{chawla2002}
+\citation{brownlee2021}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Objectives}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Dataset Loading}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Class Imbalance and SMOTE}{\thepage }{}\protected@file@percent }
+\citation{lecun1998}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Class distribution of the original dataset (left) and after SMOTE oversampling (right). Class\nobreakspace  {}1 accounts for 46.6\% of the 3\,486 original instances and Class\nobreakspace  {}4 is the smallest minority. SMOTE raises all minority classes to 1\,625 samples each, producing a perfectly uniform distribution of 13\,000 instances total.}}{\thepage }{}\protected@file@percent }
+\newlabel{fig:piecharts}{{1}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Dataset Partitioning}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Network Architecture}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Forward Propagation}{\thepage }{}\protected@file@percent }
+\newlabel{eq:internal}{{3}{\thepage }}
+\newlabel{eq:output}{{4}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Activation Functions}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.1}Logistic (Sigmoid)}{\thepage }{}\protected@file@percent }
+\newlabel{eq:logistic}{{5}{\thepage }}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.2}Hyperbolic Tangent (Tanh)}{\thepage }{}\protected@file@percent }
+\newlabel{eq:tanh}{{7}{\thepage }}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.3}Leaky ReLU}{\thepage }{}\protected@file@percent }
+\newlabel{eq:lrelu}{{9}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Error Computation}{\thepage }{}\protected@file@percent }
+\newlabel{eq:mse}{{12}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Backpropagation Delta Equations}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.8.1}Output Layer Delta}{\thepage }{}\protected@file@percent }
+\newlabel{eq:delta_out}{{13}{\thepage }}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.8.2}Hidden Layer Delta}{\thepage }{}\protected@file@percent }
+\newlabel{eq:delta_hidden}{{14}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.9}Weight Update: Generalised Delta Rule with Momentum}{\thepage }{}\protected@file@percent }
+\newlabel{eq:dw}{{16}{\thepage }}
+\newlabel{eq:w_update}{{17}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.10}Mini-Batch Gradient Descent}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.11}Validation and Evaluation Metrics}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experimental Results}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Hyperparameter Configurations}{\thepage }{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Hyperparameter Configurations Tested}}{\thepage }{}\protected@file@percent }
+\newlabel{tab:configs}{{1}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Training and Validation Errors}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Scores Summary}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Best Model and Prediction}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Analysis and Discussion of Results}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Impact of Learning Rate}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Role of Momentum}{\thepage }{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Validation-set summary ranked by macro F1. ``Epoch'' denotes the first epoch at which both training and validation MSE fell below 0.02; DNF indicates that this did not occur within 100 epochs. Time-adjusted cost is computed as $\text  {Time}\times (\text  {Epoch}/100)$ for converged runs.}}{\thepage }{}\protected@file@percent }
+\newlabel{tab:scores}{{2}{\thepage }}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Training and validation MSE for the five Tanh configurations (left) and five Leaky ReLU configurations (right). Lowering the learning rate enables convergence in both families, higher momentum compresses the number of epochs needed once the learning rate is stabilized, and the 5-node Leaky ReLU model is the clearest failure case.}}{\thepage }{}\protected@file@percent }
+\newlabel{fig:learningcurve}{{2}{\thepage }}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Hidden Layer Width}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Activation Function Comparison}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Effect of SMOTE on Class Balance}{\thepage }{}\protected@file@percent }
+\bibcite{rumelhart1986}{1}
+\bibcite{chawla2002}{2}
+\bibcite{brownlee2021}{3}
+\bibcite{lecun1998}{4}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Convergence Rate and Early Stopping}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{\thepage }{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}{REFERENCES} }{\thepage }{}\protected@file@percent }
+\gdef \@abspage@last{6}
