@@ -36,11 +36,20 @@ mbtiongson/neural-network-training/
     └── combined_scores.csv       # Aggregated scores CSV
 ```
 
-### Running the Python Version
+### Running the Python Version for Deployment
+
+For a production or deployment environment, the refactored modular python structural format is recommended. Ensure the library requirements are satisfied first:
 
 ```bash
 cd python/
-python main.py           # Train all networks and export predictions
+pip install -r requirements.txt
+```
+
+To run the pipeline and output standard prediction artifacts:
+
+```bash
+cd python/
+python main.py           # Train all networks and export predictions to predictions/ directory
 python checkscores.py    # Aggregate and rank scores from export/
 ```
 

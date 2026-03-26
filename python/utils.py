@@ -8,7 +8,6 @@ from network import HiddenLayer, OutputLayer, Epoch
 
 FIGURES_DIR = os.path.join(os.path.dirname(__file__), "figures")
 
-# ─── Dataset Distribution Visualization ───────────────────────────────────────
 
 def piechart(datalabels, title='Class Distribution'): #use trainingset labels
     classcounts = np.bincount(datalabels, minlength=9)[1:]
@@ -20,15 +19,12 @@ def piechart(datalabels, title='Class Distribution'): #use trainingset labels
     plt.title(title)
     plt.axis('equal')
 
-    # Save figure
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    safetitle = title.replace(" ", "_").replace(":", "").replace("/", "_")
-    filepath = os.path.join(FIGURES_DIR, f"{safetitle}.png")
-    plt.savefig(filepath, bbox_inches='tight', dpi=150)
-    print(f"Saved figure → {filepath}")
+    filename = title.replace(' ', '_').lower() + '.png'
+    filepath = os.path.join(FIGURES_DIR, filename)
+    plt.savefig(filepath, bbox_inches='tight', dpi=100)
     plt.close()
-
-# ─── Partitioning the Dataset ─────────────────────────────────────────────────
+    print(f"Figure saved to {filepath}")
 
 class Partition: #X is the dataset, y is the datalabels
     def __init__(self, X, y, valsize=800, outputdir="export", randomstate=50):
@@ -57,9 +53,11 @@ class Partition: #X is the dataset, y is the datalabels
         print("Training Set Details")
         print(f"  Shape       : {self.trainingset.shape}")
         print(f"  Label shape : {self.traininglabels.shape}")
-        print(f"  Feature min : {self.trainingset.min():.6f}")
-        print(f"  Feature max : {self.trainingset.max():.6f}")
-        print(f"  Feature mean: {self.trainingset.mean():.6f}")
+        print("\n  Class distribution:")
+        total = len(self.traininglabels)
+        for cls in self.classes:
+            n = np.sum(self.traininglabels == cls)
+            print(f"    Class {cls}: {n:>5}  ({n/total*100:.2f}%)")
         piechart(self.traininglabels, "Class Distribution of Training Set")
         print(f"\nValidation Set Details")
         print(f"  Shape       : {self.validationset.shape}")
@@ -73,7 +71,6 @@ class Partition: #X is the dataset, y is the datalabels
         np.savetxt(path, data, delimiter=",", fmt=fmt)
         print(f"Saved → {path}  shape: {data.shape}")
 
-# ─── Mini-batch Generator ─────────────────────────────────────────────────────
 
 def minibatch(trainingset, traininglabels, batch_size=8):
     N = len(trainingset)
@@ -82,7 +79,6 @@ def minibatch(trainingset, traininglabels, batch_size=8):
         i = indices[start : start + batch_size]
         yield trainingset[i], traininglabels[i]
 
-# ─── Validation Error ─────────────────────────────────────────────────────────
 
 def computeValError(epoch):
     total_mse = 0.0
@@ -99,13 +95,20 @@ def computeValError(epoch):
         total_mse += epoch.outputlayer_k.mse
     return total_mse / n if n > 0 else 0.0
 
-# ─── Learning Curve Plot ──────────────────────────────────────────────────────
 
-def learningcurve(train_errors, val_errors, networkname="Learning Curve Training vs Validation Error"):
-    epochs = range(1, len(train_errors) + 1)
+def learningcurve(epochs, networkname="Learning Curve: Training vs Validation Error"):
     plt.figure(figsize=(10, 5))
-    plt.plot(epochs, train_errors, label="Training Error (MSE)")
-    plt.plot(epochs, val_errors,   label="Validation Error (MSE)")
+
+    for i, epoch in enumerate(epochs, 1):
+        train_errors = epoch.train_errors
+        val_errors   = epoch.val_errors
+        label = epoch.label
+
+        ep_range = range(1, len(train_errors) + 1)
+
+        plt.plot(ep_range, train_errors, label=f"{label} - Train")
+        plt.plot(ep_range, val_errors,   label=f"{label} - Val")
+
     plt.xlabel("Epoch")
     plt.ylabel("MSE")
     plt.title(networkname)
@@ -113,69 +116,49 @@ def learningcurve(train_errors, val_errors, networkname="Learning Curve Training
     plt.grid(True)
     plt.tight_layout()
 
-    # Save figure
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    safetitle = networkname.replace(" ", "_").replace(":", "").replace("/", "_")
-    filepath = os.path.join(FIGURES_DIR, f"{safetitle}.png")
-    plt.savefig(filepath, bbox_inches='tight', dpi=150)
-    print(f"Saved figure → {filepath}")
+    filename = networkname.replace(' ', '_').replace(':', '').lower() + '.png'
+    filepath = os.path.join(FIGURES_DIR, filename)
+    plt.savefig(filepath, bbox_inches='tight', dpi=100)
     plt.close()
+    print(f"Figure saved to {filepath}")
 
-# ─── Training Function ────────────────────────────────────────────────────────
 
-def train(epoch, networkname="Learning Curve Training vs Validation Error", epochs=100):
-    """Train the network for the given number of epochs.
-    Returns (train_errors, val_errors) lists for use in consolidated_learningcurve."""
+def train(epoch, networkname = "Learning Curve: Training vs Validation Error", epochs=100):
     batch_size   = epoch.config.get('batch_size', 8)
-    train_errors = []
-    val_errors   = []
+
     totaltime = 0
     for ep in range(epochs):
         start = time.time()
         epoch_error = 0.0
         n_batches = 0
+        misclassified = 0
+
         for xbatch, dbatch in minibatch(epoch.trainingset, epoch.traininglabels, batch_size):
-            epoch_error += epoch.run_batch(xbatch, dbatch)
+            batch_err, batch_misc = epoch.run_batch(xbatch, dbatch) 
+            epoch_error += batch_err
+            misclassified += batch_misc
             n_batches += 1
         epoch_error /= max(n_batches, 1)
+        
+        epoch.error = epoch_error #updating errors
+        epoch.epoch_iteration = ep + 1
         val_error = computeValError(epoch)
-        train_errors.append(epoch_error)
-        val_errors.append(val_error)
+        
+        epoch.log_epoch(epoch.epoch_iteration, epoch_error, val_error, misclassified)
+
         elapsed = time.time() - start
         totaltime += elapsed
         if (ep + 1) % 5 == 0:
-            print(f"Epoch {ep+1:>4}  Train: {epoch_error:.5f}  Val: {val_error:.5f}  Time: {elapsed:.3f}s")
+            print(f"Epoch {ep+1:>4}  Train: {epoch_error:.5f}  Val: {val_error:.5f}  Misc: {misclassified}  Time: {elapsed:.3f}s")    
+            
     epoch.totaltime = totaltime
+    
     epoch.Scores()
     epoch.printScores()
     print(f"Total training time: {totaltime:.2f}s")
-    learningcurve(train_errors, val_errors, networkname)
-    return train_errors, val_errors
+    learningcurve([epoch], networkname)
 
-# ─── Consolidated Learning Curve (all networks) ───────────────────────────────
-
-def consolidated_learningcurve(all_results):
-    """Plot all network learning curves on a single figure.
-    all_results: list of tuples (name, train_errors, val_errors)"""
-    plt.figure(figsize=(14, 7))
-    for name, train_errors, val_errors in all_results:
-        epochs = range(1, len(train_errors) + 1)
-        plt.plot(epochs, train_errors, label=f"{name} (Train)")
-        plt.plot(epochs, val_errors, linestyle='--', label=f"{name} (Val)")
-    plt.xlabel("Epoch")
-    plt.ylabel("MSE")
-    plt.title("Consolidated Learning Curves — All Networks")
-    plt.legend(fontsize=8)
-    plt.grid(True)
-    plt.tight_layout()
-
-    os.makedirs(FIGURES_DIR, exist_ok=True)
-    filepath = os.path.join(FIGURES_DIR, "Consolidated_Learning_Curves.png")
-    plt.savefig(filepath, bbox_inches='tight', dpi=150)
-    print(f"Saved consolidated figure → {filepath}")
-    plt.close()
-
-# ─── Weight Loading ───────────────────────────────────────────────────────────
 
 def loadWeights(path):
     blocks = {'Wi': [], 'Wj': [], 'Wk': []}
@@ -190,12 +173,11 @@ def loadWeights(path):
                 current = tag
                 continue
             if current is not None:
-                blocks[str(current)].append([float(v) for v in row])
+                blocks[current].append([float(v) for v in row])
     return (np.array(blocks['Wi']),
             np.array(blocks['Wj']),
             np.array(blocks['Wk']))
 
-# ─── Prediction ───────────────────────────────────────────────────────────────
 
 def runPredictions(model, testset, cfg):
     if isinstance(model, tuple):
@@ -218,7 +200,8 @@ def runPredictions(model, testset, cfg):
         predictions.append(label)
     return predictions
 
-def exportPredictions(predictions, filename="predictions_for_test_networkA.csv", outputdir="predictions"):
+def exportPredictions(predictions, filename="predictions_for_test_networkA.csv"):
+    outputdir = "predictions"
     os.makedirs(outputdir, exist_ok=True)
     filepath = os.path.join(outputdir, filename)
     with open(filepath, 'w', newline='') as f:

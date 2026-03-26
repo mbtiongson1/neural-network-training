@@ -99,11 +99,13 @@ class HiddenLayer:
 class Epoch:
     def __init__(self, split, config):
         self.config = config
-
+        self.label = ""
         inputsize  = split.trainingset.shape[1] + 1
         hiddensize = config['size']
         outputsize = len(split.classes)
         #randomizing start weights
+        
+        np.random.seed(50) #for reproducibility
         Wi = np.random.randn(hiddensize, inputsize) * 0.01
         Wj = np.random.randn(hiddensize, hiddensize + 1)  * 0.01
         Wk = np.random.randn(outputsize, hiddensize + 1)  * 0.01
@@ -113,22 +115,22 @@ class Epoch:
         self.outputlayer_k = OutputLayer(config['methods'][2], Wk, config)
 
         self.test_set = list(zip(split.validationset, split.validationlabels))
-        self.error = 0.0
-        self.iteration = 1
+        self.error = 0.0 #for scores
+        
+        self.batch_iteration = 0
+        self.epoch_iteration = 0
+
+        #for export
+        self.train_errors = []
+        self.val_errors = []
+        self.epochs_logged = []
+        self.misclassified = []
+        
         self.tp = self.tn = self.fp = self.fn = 0.0
         self.p = self.r = self.a = self.f1 = self.matthews = 0.0
 
         self.trainingset = split.trainingset
         self.traininglabels = split.traininglabels
-        self.confmat = np.zeros((outputsize, outputsize), dtype=int)
-        self.tps: list[int] = []
-        self.tns: list[int] = []
-        self.fps: list[int] = []
-        self.fns: list[int] = []
-        self.precisions: list[float] = []
-        self.recalls: list[float] = []
-        self.f1s: list[float] = []
-        self.totaltime = 0.0
  
     def run(self, x, d):
         x_biased = np.concatenate(([1.0], np.asarray(x, dtype=float)))
@@ -166,11 +168,12 @@ class Epoch:
         self.hiddenlayer_j.w_old = self.hiddenlayer_j.w_new
         self.hiddenlayer_i.w_old = self.hiddenlayer_i.w_new
  
-        self.iteration += 1
+        self.epoch_iteration += 1
  
     def run_batch(self, X_batch, D_batch):
         batch_size = len(X_batch)
         error = 0.0
+        misclassified = 0
  
         for SAMPLE in range(batch_size):
             x_biased = np.concatenate(([1.0], np.asarray(X_batch[SAMPLE], dtype=float)))
@@ -182,7 +185,13 @@ class Epoch:
  
             outputsize = self.outputlayer_k.w_old.shape[0]
             d_onehot = np.zeros(outputsize)
-            d_onehot[int(D_batch[SAMPLE]) - 1] = 1.0
+            actual_class = int(D_batch[SAMPLE]) - 1
+            d_onehot[actual_class] = 1.0
+
+            predicted_class = np.argmax(self.outputlayer_k.o)
+            if predicted_class != actual_class:
+                misclassified += 1
+
 
             # Error calcs
             self.outputlayer_k.computeError(d_onehot)
@@ -209,8 +218,8 @@ class Epoch:
         self.hiddenlayer_i.w_old = self.hiddenlayer_i.w_new
  
         self.error = error / batch_size
-        self.iteration += 1
-        return self.error
+        self.batch_iteration += 1
+        return self.error, misclassified
  
     def Scores(self):
         n_classes = self.outputlayer_k.w_old.shape[0]
@@ -291,50 +300,75 @@ class Epoch:
             print(f"  {'Class '+str(c+1):<8} {self.tps[c]:>6} {self.tns[c]:>6} {self.fps[c]:>6} {self.fns[c]:>6} {self.precisions[c]:>10.5f} {self.recalls[c]:>10.5f} {self.f1s[c]:>10.5f}")
         print()
         print("Summary Metrics:")
-        print(f"  Error (MSE):                  {self.error:.5f}")
         print(f"  Accuracy:                     {self.a:.5f}")
         print(f"  Precision (Macro-Avg):        {self.p:.5f}")
         print(f"  Recall (Macro-Avg):           {self.r:.5f}")
+        print(f"  Error (MSE):                  {self.error:.5f}")
         print(f"  F1 Score (Macro-Avg):         {self.f1:.5f}")
         print(f"  Matthews Correlation Coeff:   {self.matthews:.5f}")
  
+    def log_epoch(self, epoch_idx, train_error, val_error, misclassified):
+        self.epochs_logged.append(epoch_idx)
+        self.train_errors.append(train_error)
+        self.val_errors.append(val_error)
+        self.misclassified.append(misclassified)
+
     def exportErrors(self, outputdir="export"):
         os.makedirs(outputdir, exist_ok=True)
         filepath = os.path.join(outputdir, "errors.csv")
-        writeHeader = not os.path.exists(filepath) or os.path.getsize(filepath) == 0
-        with open(filepath, 'a', newline='') as f:
+
+        with open(filepath, 'w', newline='') as f:
             writer = csv.writer(f)
-            if writeHeader:
-                writer.writerow(['iteration', 'error'])
-            writer.writerow([self.iteration, self.error])
+            writer.writerow(['epoch', 'train_error', 'val_error', 'misclassified'])
+            for ep, tr, val, mis in zip(self.epochs_logged, self.train_errors, self.val_errors, self.misclassified):
+                writer.writerow([ep, tr, val, mis])
  
     def exportScores(self, outputdir="export"):
         os.makedirs(outputdir, exist_ok=True)
         filepath = os.path.join(outputdir, "scores.csv")
-        writeHeader = not os.path.exists(filepath) or os.path.getsize(filepath) == 0
         n = self.confmat.shape[0]
-        with open(filepath, 'a', newline='') as f:
+        with open(filepath, 'w', newline='') as f:
             writer = csv.writer(f)
-            if writeHeader:
-                header = ['iteration']
-                for c in range(n):
-                    cn = f"class{c+1}"
-                    header.extend([f"{cn}_TP", f"{cn}_TN", f"{cn}_FP", f"{cn}_FN",
-                                f"{cn}_Precision", f"{cn}_Recall", f"{cn}_F1"])
-                header.extend(['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'matthews', "Time"])
-                writer.writerow(header)
-            row_vals: list = [self.iteration]
+
+            # Write header
+            header = ['Epoch']
             for c in range(n):
-                row_vals.extend([self.tps[c], self.tns[c], self.fps[c], self.fns[c],
+                cn = f"class{c+1}"
+                header.extend([f"{cn}_TP", f"{cn}_TN", f"{cn}_FP", f"{cn}_FN",
+                            f"{cn}_Precision", f"{cn}_Recall", f"{cn}_F1"])
+            header.extend(['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'matthews', "Time"])
+            writer.writerow(header)
+
+            # Write the row
+            row = [self.epoch_iteration]
+            for c in range(n):
+                row.extend([self.tps[c], self.tns[c], self.fps[c], self.fns[c],
                             self.precisions[c], self.recalls[c], self.f1s[c]])
-            row_vals.extend([self.a, self.p, self.r, self.f1, self.matthews, self.totaltime])
-            writer.writerow(row_vals)
+            row.extend([self.a, self.p, self.r, self.f1, self.matthews, self.totaltime])
+            writer.writerow(row)
 
     def exportConfusionMatrix(self, outputdir="export"):
         os.makedirs(outputdir, exist_ok=True)
         filepath = os.path.join(outputdir, "confusion_matrix.csv")
-        np.savetxt(filepath, self.confmat, delimiter=",", fmt="%d")
-        print(f"Saved → {filepath}  shape: {self.confmat.shape}")
+        n = len(self.tps)  # number of classes
+
+        with open(filepath, 'w', newline='') as f:
+            writer = csv.writer(f)
+            # Header
+            writer.writerow(['Class', 'TP', 'TN', 'FP', 'FN', 'Precision', 'Recall', 'F1'])
+            # Write per-class stats
+            for c in range(n):
+                writer.writerow([
+                    f'Class {c+1}',
+                    self.tps[c],
+                    self.tns[c],
+                    self.fps[c],
+                    self.fns[c],
+                    f'{self.precisions[c]:.5f}',
+                    f'{self.recalls[c]:.5f}',
+                    f'{self.f1s[c]:.5f}'
+                ])
+        print(f"Saved → {filepath}  shape: {n} classes")
 
     def exportWeights(self, outputdir="export"):
         os.makedirs(outputdir, exist_ok=True)

@@ -1,155 +1,131 @@
 #!/usr/bin/env python
-"""
-Implementing the Backpropagation Algorithm
-==========================================
-A Multilayer Perceptron (MLP) Neural Network trained using the
-Backpropagation Algorithm on a challenging 8-class dataset.
-
-This script is the consolidated, pruned Python equivalent of main.ipynb.
-"""
-
 import numpy as np
 import os
-# Trigger diagnostics
+import sys
 
-# ─── 1. Loading the Dataset ──────────────────────────────────────────────────
-# The dataset is loaded from CSV files in the dataset/ directory.
-# Features are dense numerical vectors with 2052 dimensions, and
-# labels range from 1 to 8 (8 classes).
-
-DATASET     = np.loadtxt(os.path.join("dataset", "data.csv"), delimiter=",")
-DATALABELS  = np.loadtxt(os.path.join("dataset", "data_labels.csv"), delimiter=",", dtype=int)
-TESTSET     = np.loadtxt(os.path.join("dataset", "test_set.csv"), delimiter=",")
-
-print(f"DATASET : {DATASET.shape}")
-print(f"DATALABELS : {DATALABELS.shape}  classes: {np.unique(DATALABELS)}")
-print(f"TESTSET : {TESTSET.shape}")
-
-CLASSES = int(np.max(DATALABELS)) #1,2,3,4,5,6,7,8
-LABELS = np.zeros((len(DATALABELS), CLASSES), dtype=float) #what class is the data
-for _i, label in enumerate(DATALABELS):
-    LABELS[_i, int(label) - 1] = 1.0
-
-print(f"LABELS   : {LABELS.shape}")
-print(f"Sample   : label {DATALABELS[0]} → {LABELS[0]}")
-
-# ─── 2. Dataset Distribution ─────────────────────────────────────────────────
-# Visualize class distribution before and after SMOTE.
-
-from utils import piechart, Partition, train, loadWeights, runPredictions, exportPredictions, consolidated_learningcurve
+from utils import piechart, Partition, train, loadWeights, runPredictions, exportPredictions, learningcurve
 from network import Epoch
-
-piechart(DATALABELS, "Class Distribution Original Dataset") #the original
-
-# ─── 3. SMOTE (Synthetic Minority Over-sampling Technique) ───────────────────
-# SMOTE generates synthetic samples for minority classes to balance
-# the class distribution.
-
-X = DATASET
-y = DATALABELS
-
-from imblearn.over_sampling import SMOTE
-
-X_balanced, y_balanced = SMOTE(random_state=50).fit_resample(X, y)
-
-piechart(y_balanced, "Class Distribution after SMOTE")
-
-# ─── 4. Partitioning the Dataset ─────────────────────────────────────────────
-# Validation set: 800 samples.  Training set: remaining samples.
-
-split = Partition(X_balanced, y_balanced)
-split.printdetails()
-
-# ─── 5. Hyperparameters Setup ────────────────────────────────────────────────
-# Two network configurations: Network A (Tanh) and Network B (Leaky ReLU).
-
 from config import NetworkA, NetworkB
 
-# Collector for consolidated learning curve
-all_results = []
+def main():
+    print("Loading dataset...")
+    DATASET     = np.loadtxt(os.path.join("dataset", "data.csv"), delimiter=",")
+    DATALABELS  = np.loadtxt(os.path.join("dataset", "data_labels.csv"), delimiter=",", dtype=int)
+    TESTSET     = np.loadtxt(os.path.join("dataset", "test_set.csv"), delimiter=",")
+    
+    CLASSES = int(np.max(DATALABELS))
+    LABELS = np.zeros((len(DATALABELS), CLASSES), dtype=float)
+    for _i, label in enumerate(DATALABELS):
+        LABELS[_i, int(label) - 1] = 1.0
 
-# ─── 6. Training: Network A (default) ────────────────────────────────────────
-# Default config: eta=0.85, alpha=0.9, size=8.
-# Error remained flat — the learning rate was too aggressive.
+    piechart(DATALABELS, "Class Distribution Original Dataset")
+    
+    print("Running SMOTE...")
+    from imblearn.over_sampling import SMOTE
+    X_balanced, y_balanced = SMOTE(random_state=50).fit_resample(DATASET, DATALABELS)
+    piechart(y_balanced, "Class Distribution after SMOTE")
+    
+    print("Partitioning the dataset...")
+    split = Partition(X_balanced, y_balanced)
+    split.printdetails()
+    
+    # ─── Training Configurations ──────────────────────────────────────────────
+    
+    epochA = Epoch(split, NetworkA)
+    epochA.label = "Network A - Tanh (eta=0.85, alpha=0.9, size=8)"
+    train(epochA, "Learning curve: Network A")
+    epochA.exportAll("export/networkA/")
 
-epochA = Epoch(split, NetworkA)
-te, ve = train(epochA, "Learning curve Network A")
-epochA.exportAll("export/networkA/")
-all_results.append(("Network A", te, ve))
+    # Improvement 1
+    NetworkA['eta'] = 0.1
+    NetworkA['alpha'] = 0.5
+    NetworkA['size'] = 12
+    epochA_improv = Epoch(split, NetworkA)
+    epochA_improv.label = "Network A - Tanh (eta=0.1, alpha=0.5, size=12)"
+    train(epochA_improv, "Learning curve: Network A improved")
+    epochA_improv.exportAll("export/networkA_improv/")
 
-# ─── 7. Improvements for Network A ───────────────────────────────────────────
-# Lowered eta from 0.85 → 0.1, alpha from 0.9 → 0.5, size from 8 → 12.
+    # Improvement 2
+    NetworkA['eta'] = 0.05
+    epochA_improv2 = Epoch(split, NetworkA)
+    epochA_improv2.label = "Network A - Tanh (eta=0.05, alpha=0.5, size=12)"
+    train(epochA_improv2, "Learning curve: Network A improved 2")
+    epochA_improv2.exportAll("export/networkA_improv2/")
 
-NetworkA['eta'] = 0.1 #lowering the learning rate
-NetworkA['alpha'] = 0.5 #lowering the momentum
-NetworkA['size'] = 12 #increasing the number of hidden layers
+    # Improvement 2 Fast
+    NetworkA['alpha'] = 0.9
+    epochA_improv2_fast = Epoch(split, NetworkA)
+    epochA_improv2_fast.label = "Network A - Tanh (eta=0.05, alpha=0.9, size=12)"
+    train(epochA_improv2_fast, "Learning curve: Network A improved 2 (Fast)")
+    epochA_improv2_fast.exportAll("export/networkA_improv2_fast/")
 
-epochA_improv = Epoch(split, NetworkA)
-te, ve = train(epochA_improv, "Learning curve Network A improved")
-epochA_improv.exportAll("export/networkA_improv/")
-all_results.append(("Network A improved", te, ve))
+    # Improvement 2 Small
+    NetworkA['size'] = 5
+    epochA_improv2_small = Epoch(split, NetworkA)
+    epochA_improv2_small.label = "Network A - Tanh (eta=0.05, alpha=0.9, size=5)"
+    train(epochA_improv2_small, "Learning curve: Network A improved 2 (Small)")
+    epochA_improv2_small.exportAll("export/networkA_improv2_small/")
+    
+    allepochA = [epochA, epochA_improv, epochA_improv2, epochA_improv2_fast, epochA_improv2_small]
+    learningcurve(allepochA, "Learning Curves of Network A compared")
 
-# ─── 8. Network A improved (Fast) ────────────────────────────────────────────
-# Testing size=10 — smaller hidden layer, potentially comparable results.
+    # Network B
+    epochB = Epoch(split, NetworkB)
+    epochB.label = "Network B - ReLU (eta=0.85, alpha=0.9, size=8)"
+    train(epochB, "Learning Curve: Network B")
+    epochB.exportAll("export/networkB/")
 
-NetworkA['alpha'] = 0.5 #increasing the momentum
-NetworkA['size'] = 10 #decreasing the number of hidden layers back
+    # Network B Improvement 1
+    NetworkB['eta'] = 0.1
+    NetworkB['alpha'] = 0.5
+    NetworkB['size'] = 12
+    epochB_improv = Epoch(split, NetworkB)
+    epochB_improv.label = "Network B - ReLU (eta=0.1, alpha=0.5, size=12)"
+    train(epochB_improv, "Learning curve: Network B improved")
+    epochB_improv.exportAll("export/networkB_improv/")
 
-epochA_improv_fast = Epoch(split, NetworkA)
-te, ve = train(epochA_improv_fast, "Learning curve Network A improved (Fast)")
-epochA_improv_fast.exportAll("export/networkA_improv_fast/")
-all_results.append(("Network A improved (Fast)", te, ve))
+    # Network B Improvement 2
+    NetworkB['eta'] = 0.05
+    epochB_improv2 = Epoch(split, NetworkB)
+    epochB_improv2.label = "Network B - ReLU (eta=0.05, alpha=0.5, size=12)"
+    train(epochB_improv2, "Learning curve: Network B improved 2")
+    epochB_improv2.exportAll("export/networkB_improv2/")
 
-# ─── 9. Training: Network B (default) ────────────────────────────────────────
-# Network B uses Leaky ReLU for hidden layers and Logistic for output.
+    # Network B Improvement 2 Fast
+    NetworkB['alpha'] = 0.9
+    epochB_improv2_fast = Epoch(split, NetworkB)
+    epochB_improv2_fast.label = "Network B - ReLU (eta=0.05, alpha=0.9, size=12)"
+    train(epochB_improv2_fast, "Learning curve: Network B improved 2 (Fast)")
+    epochB_improv2_fast.exportAll("export/networkB_improv2_fast/")
 
-epochB = Epoch(split, NetworkB)
-te, ve = train(epochB, "Learning Curve Network B")
-epochB.exportAll("export/networkB/")
-all_results.append(("Network B", te, ve))
+    # Network B Improvement 2 Small
+    NetworkB['size'] = 5
+    epochB_improv2_small = Epoch(split, NetworkB)
+    epochB_improv2_small.label = "Network B - ReLU (eta=0.05, alpha=0.9, size=5)"
+    train(epochB_improv2_small, "Learning curve: Network B improved 2 (Small)")
+    epochB_improv2_small.exportAll("export/networkB_improv2_small/")
+    
+    allepochB = [epochB, epochB_improv, epochB_improv2, epochB_improv2_fast, epochB_improv2_small]
+    learningcurve(allepochB, "Learning Curves of Network B compared")
+    
+    print("\nTraining completed for all networks.")
+    
+    # ─── Exporting Best Models ───────────────────────────────────────────────
+    
+    epochA_improv2_fast.exportWeights("modelA/")
+    epochB_improv2.exportWeights("modelB/")
+    
+    WEIGHTSA = os.path.join("modelA", "trained_weights.csv")
+    WEIGHTSB = os.path.join("modelB", "trained_weights.csv")
+    MODELA = loadWeights(WEIGHTSA)
+    MODELB = loadWeights(WEIGHTSB)
+    
+    predictions_tanh = runPredictions(MODELA, TESTSET, NetworkA)
+    predictions_relu = runPredictions(MODELB, TESTSET, NetworkB)
+    exportPredictions(predictions_tanh, filename="predictions_for_test_tanh.csv")
+    exportPredictions(predictions_relu, filename="predictions_for_test_leakyrelu.csv")
+    
+    print("\n✅ All training, scoring, and prediction exports complete.")
 
-# ─── 10. Improvements: Network B ─────────────────────────────────────────────
-# Same tuning strategy: eta=0.1, alpha=0.5, size=10.
-
-NetworkB['eta'] = 0.1 #decreasing the learning rate
-NetworkB['alpha'] = 0.5 #decreasing the momentum
-NetworkB['size'] = 10 #increasing hidden layer nodes
-
-epochB_improv = Epoch(split, NetworkB)
-te, ve = train(epochB_improv, "Learning curve Network B improved")
-epochB_improv.exportAll("export/networkB_improv/")
-all_results.append(("Network B improved", te, ve))
-
-# ─── 11. Consolidated Learning Curve ─────────────────────────────────────────
-# Plot all 5 training runs (6 curves counting duplicate default A) in one figure.
-
-consolidated_learningcurve(all_results)
-
-# ─── 12. Exporting Best Models ───────────────────────────────────────────────
-# Network B (improved, Leaky ReLU) → modelA (best)
-# Network A (improved, fast, Tanh) → modelB (backup)
-
-epochB_improv.exportWeights("modelA/")
-epochA_improv_fast.exportWeights("modelB/")
-
-# ─── 13. Running and Exporting Predictions ───────────────────────────────────
-# The best two models are loaded and used to predict the unseen test set.
-
-#for sanity's sake, this is the parsed  TESTSET from test_set.csv
-print(TESTSET)
-print(f"TESTSET : {TESTSET.shape}")
-
-WEIGHTSA = os.path.join("modelA", "trained_weights.csv") #tanh
-WEIGHTSB = os.path.join("modelB", "trained_weights.csv") #leakyrelu
-
-MODELA = loadWeights(WEIGHTSA)
-MODELB = loadWeights(WEIGHTSB)
-
-predictions_tanh = runPredictions(MODELA, TESTSET, NetworkA)
-predictions_relu = runPredictions(MODELB, TESTSET, NetworkB)
-
-#exporting predictions
-exportPredictions(predictions_tanh, filename="predictions_for_test_tanh.csv")
-exportPredictions(predictions_relu, filename="predictions_for_test_leakyrelu.csv")
-
-print("\n✅ All training, scoring, and prediction exports complete.")
+if __name__ == "__main__":
+    main()
