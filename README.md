@@ -6,34 +6,36 @@ A Multilayer Perceptron (MLP) Neural Network trained using the Backpropagation A
 
 ## Project Structure
 
-```
+The project has been refactored into a modern, modular Python architecture located in `python/`, containing the core components (`main.py`, `network.py`, `activations.py`, etc.). The original Jupyter notebook (`main.ipynb`) and its outputs are archived in `submission/`.
+
+```text
 mbtiongson/neural-network-training/
 ├── LICENSE
 ├── README.md
 ├── .gitignore
-├── src/                          # Additional source files
-├── python/                       # Modular Python refactor of main.ipynb
-│   ├── main.py                   # Main execution engine (run this)
-│   ├── activations.py            # Activation functions and derivatives
-│   ├── network.py                # OutputLayer, HiddenLayer, Epoch classes
-│   ├── utils.py                  # Utilities: Partition, train, predictions, charts
-│   ├── checkscores.py            # Score aggregation tool
-│   ├── dataset/                  # Copy of the dataset for standalone execution
-│   ├── figures/                  # Generated charts and learning curves
-│   ├── export/                   # Training artifacts (generated at runtime)
-│   ├── modelA/                   # Best model weights (generated at runtime)
-│   ├── modelB/                   # Backup model weights (generated at runtime)
-│   └── predictions/              # Test set predictions (generated at runtime)
-└── submission/                   # Original notebook and raw training outputs
-    ├── main.ipynb                # Original Jupyter notebook
-    ├── checkscores.py            # Original score aggregation script
-    ├── dataset/                  # Original dataset CSVs
-    ├── export/                   # Original training exports
-    ├── final/                    # Final combined scores
-    ├── modelA/                   # Original best model weights
-    ├── modelB/                   # Original backup model weights
-    ├── predictions/              # Original test set predictions
-    └── combined_scores.csv       # Aggregated scores CSV
+├── python/
+│   ├── main.py
+│   ├── activations.py
+│   ├── network.py
+│   ├── utils.py
+│   ├── checkscores.py
+│   ├── config.py
+│   ├── dataset/
+│   ├── figures/
+│   ├── export/
+│   ├── modelA/
+│   ├── modelB/
+│   └── predictions/
+└── submission/
+    ├── main.ipynb
+    ├── checkscores.py
+    ├── dataset/
+    ├── export/
+    ├── final/
+    ├── modelA/
+    ├── modelB/
+    ├── predictions/
+    └── combined_scores.csv
 ```
 
 ### Running the Python Version for Deployment
@@ -281,7 +283,7 @@ Two network configurations were defined, differing primarily in their activation
 | Parameter | Network A (Tanh) | Network B (Leaky ReLU) |
 |-----------|-------------------|------------------------|
 | Hidden activation | Tanh ($a=1.716, b=2/3$) | Leaky ReLU ($\gamma=0.01$) |
-| Output activation | Logistic ($a=1.0$) | Logistic ($a=1.0$) |
+| Output activation | Logistic ($a=1.0$) | Logistic ($a=2.0$) |
 | Learning rate ($\eta$) | 0.85 | 0.85 |
 | Momentum ($\alpha$) | 0.9 | 0.9 |
 | Hidden layer size | 8 | 8 |
@@ -303,7 +305,7 @@ A second run with the same parameters confirmed the issue — the F1 score dropp
 
 #### Improvements for Network A
 
-The hyperparameters were adjusted based on the observation that convergence was failing:
+The hyperparameters were adjusted based on the observation that convergence was failing. Lowering the learning rate ($\eta$) to 0.1 or 0.05 was the primary factor enabling successful training.
 
 | Parameter | Default | Improved |
 |-----------|---------|----------|
@@ -317,35 +319,27 @@ NetworkA['alpha'] = 0.5  # lowering the momentum
 NetworkA['size'] = 12    # increasing hidden layer nodes
 ```
 
-The results improved dramatically — errors converged steadily, and the validation error aligned well with the training error. The F1 score jumped to **0.9744**. Training time roughly doubled (from ~38s to ~43s) due to the larger hidden layer, but since convergence happened early, training could reasonably be stopped around the **40th epoch**.
+The results improved dramatically. Errors converged steadily, and the validation error aligned well with the training error. A hidden size of **12** was found to be more reliable across configurations.
 
-#### Further Tuning — Faster Network A
-
-To test whether a slightly smaller hidden layer could deliver comparable results faster, the size was reduced back to 10:
-
-```python
-NetworkA['size'] = 10  # trying a smaller hidden layer
-```
-
-Surprisingly, this configuration achieved a **lower MSE of 0.00083** and a marginally better F1 score of **0.9748**, while being as fast as the default configuration (~40.8s). Having only 10 hidden nodes proved to be a sweet spot — large enough to capture the decision boundaries, small enough to train efficiently.
+Later experiments showed that **higher momentum** could improve speed *after* the learning rate had been stabilized. For example, `networkA_improv2_fast` ($\eta=0.1, \alpha=0.9$) converged much faster, reaching its target error threshold by the 44th epoch.
 
 ### Training: Network B
 
 #### Default Parameters — First Attempt
 
-Network B, using Leaky ReLU for hidden layers, was trained with the same default parameters (`eta=0.85`, `alpha=0.9`, `size=8`). The result was identical to Network A's failure — the errors did not change, and the F1 score was only **0.0263**. The default learning rate was simply too high for this architecture as well.
+Network B, using Leaky ReLU for hidden layers, was trained with the same default parameters (`eta=0.85`, `alpha=0.9`, `size=8`). The result was identical to Network A's failure — the errors did not change, and the F1 score was very low.
 
 #### Improvements for Network B
 
-The same tuning strategy that worked for Network A was applied:
+The same tuning strategy that worked for Network A was applied, lowering the learning rate to 0.1 and increasing the hidden nodes to 12 (`networkB_improv2`).
 
 ```python
 NetworkB['eta'] = 0.1    # decreasing the learning rate
 NetworkB['alpha'] = 0.5  # decreasing the momentum
-NetworkB['size'] = 10    # increasing hidden layer nodes
+NetworkB['size'] = 12    # increasing hidden layer nodes
 ```
 
-This produced the **best result of all configurations** — an F1 score of **0.9866** with 98.6% accuracy. The learning curve showed excellent convergence with training and validation errors tracking closely. The small time penalty (~43.6s vs ~40.8s for Network A fast) was considered well worth the performance gain.
+This produced the **best result of all configurations**, demonstrating Leaky ReLU's superior peak performance when hyperparameter settings are appropriate. As noted during testing, reducing the hidden layer to 5 weakened Leaky ReLU considerably, confirming that a size of 12 was indeed necessary for this architecture.
 
 ---
 
@@ -353,31 +347,33 @@ This produced the **best result of all configurations** — an F1 score of **0.9
 
 ### F1 Score Rankings
 
-| Rank | Network | F1 Score | Time (s) |
-|------|---------|----------|----------|
-| 🥇 1 | Network B (improved) — Leaky ReLU | **0.9866** | 43.57 |
-| 🥈 2 | Network A (improved, fast) — Tanh | 0.9748 | 40.83 |
-| 🥉 3 | Network A (improved) — Tanh | 0.9744 | 42.88 |
-| 4 | Network A (default, run 1) | 0.0324 | 37.72 |
-| 5 | Network A (default, run 2) | 0.0283 | 38.63 |
-| 6 | Network B (default) | 0.0263 | 41.89 |
+| Rank | Network | Epoch | F1 Score | Time (s) | Time-Adjusted |
+|------|---------|-------|----------|----------|---------------|
+| 🥇 1 | **networkB_improv2** | 73 | **0.9886** | 96.9 | 70.8 |
+| 🥈 2 | **networkB_improv2_fast** | 51 | **0.9853** | 87.4 | 44.6 |
+| 🥉 3 | **networkA_improv2_fast** | 44 | **0.9835** | 67.5 | 29.7 |
+| 4 | networkA_improv2_small | 74 | 0.9811 | 42.4 | 31.3 |
+| 5 | networkA_improv | 56 | 0.9801 | 52.2 | 29.3 |
+| 6 | networkA_improv2 | 74 | 0.9761 | 59.3 | 43.9 |
+| 7 | networkB_improv | 71 | 0.9613 | 74.4 | 52.8 |
 
 ### Full Scores
 
-| Rank | Network | Accuracy | Precision | Recall | F1 | MCC |
-|------|---------|----------|-----------|--------|------|------|
-| 1 | networkB_improv | 0.98625 | 0.98646 | 0.98683 | 0.98660 | 0.98428 |
-| 2 | networkA_improv_fast | 0.97500 | 0.97591 | 0.97548 | 0.97476 | 0.97167 |
-| 3 | networkA_improv | 0.97375 | 0.97602 | 0.97472 | 0.97439 | 0.97026 |
-| 4 | networkA (run 1) | 0.14875 | 0.01859 | 0.12500 | 0.03237 | 0.00000 |
-| 5 | networkA (run 2) | 0.12750 | 0.01594 | 0.12500 | 0.02827 | 0.00000 |
-| 6 | networkB | 0.11750 | 0.01469 | 0.12500 | 0.02629 | 0.00000 |
+| Rank | Network | Epoch | F1 Score | MCC | Accuracy | Precision | Recall |
+|------|---------|-------|----------|-----|----------|-----------|--------|
+| 1 | **networkB_improv2** | 73 | **0.9886** | 0.9871 | 0.9888 | 0.9880 | 0.9893 |
+| 2 | **networkB_improv2_fast** | 51 | **0.9853** | 0.9829 | 0.9850 | 0.9856 | 0.9852 |
+| 3 | **networkA_improv2_fast** | 44 | **0.9835** | 0.9801 | 0.9825 | 0.9840 | 0.9838 |
+| 4 | networkA_improv2_small | 74 | 0.9811 | 0.9786 | 0.9813 | 0.9812 | 0.9814 |
+| 5 | networkA_improv | 56 | 0.9801 | 0.9772 | 0.9800 | 0.9804 | 0.9807 |
+| 6 | networkA_improv2 | 74 | 0.9761 | 0.9731 | 0.9763 | 0.9773 | 0.9768 |
+| 7 | networkB_improv | 71 | 0.9613 | 0.9548 | 0.9600 | 0.9647 | 0.9614 |
 
-**Network B (improved)** with Leaky ReLU is the clear winner at **98.6% accuracy and 0.9866 F1 score**. Its trained weights were exported to `modelA/trained_weights.csv` as the primary model for unseen test data.
+**Network B (`networkB_improv2`)** with Leaky ReLU is the clear winner with a **0.9886 F1 score**. Its trained weights were exported to `modelA/trained_weights.csv` as the primary model for unseen test data.
 
-**Network A (improved, fast)** with Tanh came in second at **97.5% accuracy and 0.9748 F1**. It loads faster and would scale better on longer epoch iterations. Its weights were exported to `modelB/trained_weights.csv` as the backup model.
+**Network A (`networkA_improv2_fast`)** with Tanh came in second functionally among the converging models for having the best speed-performance tradeoff (**0.9835 F1** at epoch 44). It loads faster and scales better on longer epoch iterations. Its weights were exported to `modelB/trained_weights.csv` as the backup model.
 
-The bottom three configurations (all using default hyperparameters) achieved near-zero F1 scores with MCC of 0.0, confirming they learned nothing meaningful — they simply predicted the majority class.
+The bottom configurations (using default hyperparameters and early small hidden layers like `networkB_improv2_small`) achieved near-zero F1 scores (DNF), confirming they failed to converge.
 
 ---
 
@@ -391,25 +387,33 @@ The `runPredictions` function takes the loaded weights and the test set, reconst
 
 The best two models were used to generate predictions:
 
-- **Network B improved** (Leaky ReLU) → `predictions/networkB_improv_predictions.csv`
-- **Network A improved fast** (Tanh) → `predictions/networkA_improv_fast_predictions.csv`
+- **Network B** (Leaky ReLU) → `predictions/predictions_for_test_leakyrelu.csv`
+- **Network A** (Tanh) → `predictions/predictions_for_test_tanh.csv`
 
 ---
 
 ## Conclusion and Recommendations
 
-This project demonstrated the critical importance of **hyperparameter tuning** in neural network training. The default configuration (`eta=0.85`, `alpha=0.9`) failed completely across both network architectures, while a simple reduction to `eta=0.1` and `alpha=0.5` transformed the results from near-random guessing (~3% F1) to high-accuracy classification (~98% F1).
+This study evaluated ten Multilayer Perceptron configurations across two activation-function families, Tanh and Leaky ReLU, by varying the learning rate ($\eta$), momentum constant ($\alpha$), and hidden-layer size. The conclusions below follow the ranked results and selected models reported in the **Training Results** section.
 
-**Key takeaways:**
+## Conclusions
 
-1. **Learning rate dominates early performance.** The default rate of 0.85 was far too aggressive, causing the networks to overshoot and fail to converge. Reducing it to 0.1 was the single most impactful change.
+1. **The default configuration was not usable.** The baseline `networkA` and `networkB` runs both failed to converge and ranked last, with macro F1 scores of **0.02925** and **0.02503** respectively. This confirms that the original $\eta = 0.85$ and $\alpha = 0.9$ setting was too aggressive for this task.
 
-2. **Leaky ReLU outperformed Tanh.** Network B (improved) with Leaky ReLU achieved 0.9866 F1 versus Network A's best of 0.9748. The Leaky ReLU's ability to maintain gradient flow for negative inputs likely contributed to better training dynamics.
+2. **Lowering the learning rate was the main factor that enabled successful training.** Once $\eta$ was reduced to **0.1** or **0.05**, both network families produced strong models. The top overall result came from **`networkB_improv2`**, which achieved a macro F1 score of **0.98861** and reached the target error threshold at **epoch 73**.
 
-3. **Hidden layer size has diminishing returns.** Increasing from 8 to 12 nodes helped convergence, but reducing to 10 nodes actually produced slightly better results with faster training. Over-parameterization was not necessary for this dataset.
+3. **Higher momentum improved speed after the learning rate had been stabilized.** This is most visible in **`networkA_improv2_fast`**, which reached the error target by **epoch 44** with a macro F1 score of **0.98352** and the best time-adjusted training cost among converging models. For Network B, **`networkB_improv2_fast`** also reduced convergence time to **epoch 51** while maintaining a strong macro F1 score of **0.98530**.
 
-4. **Early stopping is recommended.** The learning curves showed convergence around epoch 40 for the improved configurations. Training the full 100 epochs is unnecessary and risks overfitting.
+4. **A hidden-layer size of 12 was more reliable than 5.** Reducing the hidden size to 5 remained acceptable for Tanh (`networkA_improv2_small`, macro F1 **0.98108**), but it clearly weakened Leaky ReLU (`networkB_improv2_small`), which did not finish successfully and dropped to a macro F1 score of **0.55645**.
 
-5. **SMOTE effectively addressed class imbalance.** Without balancing, the network would likely have remained biased toward the majority class (Class 1 at 46.6%). The balanced dataset enabled the network to learn meaningful boundaries for all 8 classes. However, applying SMOTE before the train/validation split introduced potential data leakage — a future improvement would be to apply SMOTE only after partitioning.
+5. **Leaky ReLU delivered the highest peak accuracy, while Tanh offered the best efficiency-accuracy balance.** The two highest-ranked models overall were the Leaky ReLU variants `networkB_improv2` and `networkB_improv2_fast`, but the Training Results section also shows that **`networkA_improv2_fast`** is the strongest time-efficient choice among the converging models.
 
-6. **Momentum should complement, not dominate.** At $\alpha = 0.9$, the momentum term overwhelmed the gradient signal, preventing learning. Reducing to $\alpha = 0.5$ provided enough smoothing without drowning out the gradient.
+## Recommendations
+
+- **For the highest predictive performance**, use **`networkB_improv2`** as the primary model because it achieved the best overall macro F1 score (**0.98861**).
+
+- **For the strongest speed-performance tradeoff**, use **`networkA_improv2_fast`**. It converged by **epoch 44**, achieved a macro F1 score of **0.98352**, and had the lowest time-adjusted training cost among the successful runs.
+
+- **For model selection**, retain the chosen pair already identified in the Training Results section: **`networkA_improv2_fast`** for Tanh and **`networkB_improv2`** for Leaky ReLU.
+
+- **For future work**, implement formal early stopping based on validation error and apply SMOTE only after the train-validation split so the validation set remains fully independent.
