@@ -1,9 +1,0 @@
-{
-  "source_directories": [
-    "."
-  ],
-  "search_path": [
-    "python",
-    "/Users/marcotiongson/.pyenv/versions/3.10.13/lib/python3.10/site-packages"
-  ]
-}
